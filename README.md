@@ -24,7 +24,7 @@ The service will be backed by a database composed of the following relations, qu
    
 7. User Table:
 
-    Fields: UserID (Primary Key), Username, Email, Password, etc.
+    Fields: UserID (Primary Key), Permission Level (Listener, Creator, Admin), Username, Email, Password, etc.
    
 9. Playlist Table:
 
