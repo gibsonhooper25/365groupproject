@@ -5,12 +5,12 @@
 4. As a person who already knows my music tastes, I want to add entire albums to my lists at once, so that I can easily build lists with songs from artists I like.
 5. As an avid blogger, I want to share stories and thoughts about particular music and artists, so that I can express my opinions.
 6. As an artist, I want to be able to see listening statistics for my music, so that I understand what my listeners are more likely to listen to. 
-7. As a [persona], I [want to], [so that].
-8. As a [persona], I [want to], [so that].
-9. As a [persona], I [want to], [so that].
-10. As a [persona], I [want to], [so that].
-11. As a [persona], I [want to], [so that].
-12. As a [persona], I [want to], [so that].
+7. As a casual listener, I want to explore curated playlists based on moods or activities, so that I can easily find music that suits different occasions.
+8. As a social music enthusiast, I want to connect with friends and see their music preferences, so that I can discover new songs through their recommendations.
+9. As a mobile user, I want to have a seamless experience switching between devices, so that I can continue listening to my music without interruption.
+10. As an audiophile, I want to have access to high-quality audio streaming options, so that I can enjoy my favorite songs with superior sound.
+11. As a music event attendee, I want to receive notifications about upcoming concerts or events featuring my favorite artists, so that I can plan to attend.
+12. As a language learner, I want to discover and explore music in different languages, so that I can improve my language skills while enjoying diverse genres.
 
 # Exceptions/Error Scenarios
 1. If a user asks for a playlist generated based on their tastes without any songs associated with that user, it will give back an error to the user and ask them to add some songs they like.
