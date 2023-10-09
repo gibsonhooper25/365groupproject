@@ -19,9 +19,9 @@
 4. If a user tries to access a song that has been removed by either the artist or an administrator, it will give back an error that the song is not available to listen to at the moment.
 5. If a user tries to delete a shared playlist, it will give back an error that the playlist is shared and requires permission from both users. It will then send a notification to all users who share the playlist asking for permission to delete. 
 6. If an artist tries to upload a song in the wrong format, it will return an error to the artist and ask them to resubmit with an audio format approved by Harmony-API.
-7. x
-8. x
-9. x
-10. x
-11. x
-12. x
+7. If two users create a playlist with the same name at the same time, or one user creates a playlist with a name that is already taken, the service will give an error and ask for a different name.
+8. If an artist defines the metadata for a song incorrectly, such as providing the wrong year (theoretically the year should be auto-completed) or a badly-formatted title, the service will give them an error and not upload that song to the database.
+9. If a user tries to create an account with incomplete information (ex. no email or password) it will give an error and ask for complete information.
+10. If an artist creates an album or song with a title that already exists for another album or song, the database should not overwrite the previous album or song, it should insert the new one into the database as a separate tuple.
+11. If a user tries to create too many playlists within a given time period, the service should throttle at some point to prevent high traffic.
+12. If a user creates an account with a nonexistent email or tries to change their email to a nonexistent email, the database should not update until a real email is provided.
