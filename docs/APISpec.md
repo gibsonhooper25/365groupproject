@@ -1,7 +1,7 @@
 # API Specification
 ## 1. Listeners
 ### 1.1 Get Song - `/songs/{song_id}` or `/albums/{album_id}/songs/{song_id}` - GET
-### 1.2 Get Songs By Artist - '/artists/{artist_id}/songs' - GET
+### 1.2 Get Songs By Artist - `/artists/{artist_id}/songs` - GET
 Allows user to retrieve all songs by a specific artist.
 
 Returns: 
