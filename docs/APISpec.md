@@ -3,6 +3,7 @@
 ### 1.1 Get Song - `/songs/{song_id}` or `/albums/{album_id}/songs/{song_id}` - GET
 ### 1.2 Get Songs By Artist - '/artists/{artist_id}/songs' - GET
 Allows user to retrieve all songs by a specific artist.
+
 Returns: 
 ```commandline
 {
@@ -38,6 +39,7 @@ Returns:
 ```
 ### 1.6 Update Playlist - `/playlist/{playlist_id}/add-songs` - POST
 Allows the user to add a song a a pre-existing playlist.
+
 Input:
 ```commandline
 {
@@ -150,6 +152,7 @@ Returns:
 ```
 ### 3.2 Delete User - `/users/{user_id}` - DELETE
 Deletes a user from database.
+
 Returns:
 ```commandline
 {
