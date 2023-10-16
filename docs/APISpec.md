@@ -37,15 +37,9 @@ Returns:
     success: <boolean>
 }
 ```
-### 1.6 Update Playlist - `/playlist/{playlist_id}/add-songs` - POST
+### 1.6 Update Playlist - `/playlist/{playlist_id}/add-songs/{song_id}` - POST
 Allows the user to add a song a a pre-existing playlist.
 
-Input:
-```commandline
-{
-    song: <song id>
-}
-```
 Returns:
 ```commandline
 {
@@ -113,7 +107,16 @@ Input:
     name: <name>
 }
 ```
-### 2.3 View Ratings and Feedback - `/songs/{song_id}/reviews` or `/albums/{album_id}/reviews` - GET
+### 2.3 Add Song to Album - `/albums/{album_id}/add-songs/{song_id}` - POST
+Adds song to given album
+
+Returns:
+```commandline
+{
+    success: <boolean>
+}
+```
+### 2.4 View Ratings and Feedback - `/songs/{song_id}/reviews` or `/albums/{album_id}/reviews` - GET
 Allows creator to view the ratings and feedback categories for one of their songs or albums.
 
 Returns:
