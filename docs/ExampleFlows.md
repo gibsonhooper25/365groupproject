@@ -18,7 +18,7 @@
   - calls `/playlist/{playlist_id}`
 
 ## Example 3
-- Bill Wurtz is a song artist known for creating very unique songs. Bill is releasing a new album and would like add it to Harmony API and see what people think of it. To add his ne album bill will first create the album and the songs then add each of the songs to the album.
+- Bill Wurtz is a song artist known for creating very unique songs. Bill is releasing a new album and would like add it to Harmony API and see what people think of it. To add his new album bill will first create the album and the songs then add each of the songs to the album.
   - Bill creates the album with `/albums/new` providing his artist ID, the genre, and a name for the album
   - Bill creates each of the songs for the album using `/songs/new` again providing his artist ID, the genre, and the name of the song
   - Bill then adds each of these songs to this new album with `/albums/{album_id}/add-song/{song_id}`
