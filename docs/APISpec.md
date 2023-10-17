@@ -16,7 +16,7 @@ Returns the playlist with the given playlist_id.
 ```commandline
 {
     name: <string>,
-    songs: <list>,
+    songs: <list>
 }
 ```
 ### 1.5 Create Playlist - `/playlist/new` - PUT
@@ -27,18 +27,18 @@ Input:
 {
     user: <user id>,
     mood: <mood enum>,
-    name: <string>
-    length: <int>,
+    name: <string>,
+    length: <int>
 }
 ```
 Returns:
 ```commandline
 {
-    success: <boolean>
+    Playlist: <playlist id>
 }
 ```
-### 1.6 Update Playlist - `/playlist/{playlist_id}/add-songs/{song_id}` - POST
-Allows the user to add a song a a pre-existing playlist.
+### 1.6 Update Playlist - `/playlist/{playlist_id}/add-song/{song_id}` or `/playlist/{playlist_id}/add-songs/{album_id}` - POST
+Allows the user to add a song or all songs in an album to a pre-existing playlist.
 
 Returns:
 ```commandline
@@ -54,7 +54,7 @@ Input:
 ```commandline
 {
     user: <user>,
-    comment: <string>,
+    comment: <string>
 }
 ```
 Returns:
@@ -82,7 +82,36 @@ Returns:
     feedback: <enum>
 }
 ```
-### 1.10
+### 1.10 Search for song by name - `/songs/search/name` - GET
+Allows users to search for song(s) by name.
+
+Input:
+```commandline
+{
+    name: <name>
+}
+```
+Returns:
+```commandline
+{
+    songs: <list>
+}
+```
+### 1.11 Search for songs by genre - `/songs/search/genre` - GET
+Allows users to search for a bredth of songs by genre
+
+Input:
+```commandline
+{
+    genre: <genre>
+}
+```
+Returns:
+```commandline
+{
+    songs: <list>
+}
+```
 
 ## 2. Creators
 ### 2.1 Create Song (Single) - `/songs/new` - POST
@@ -107,7 +136,7 @@ Input:
     name: <name>
 }
 ```
-### 2.3 Add Song to Album - `/albums/{album_id}/add-songs/{song_id}` - POST
+### 2.3 Add Song to Album - `/albums/{album_id}/add-song/{song_id}` - POST
 Adds song to given album
 
 Returns:
@@ -143,7 +172,7 @@ Input:
     name: <string>,
     email: <string>,
     username: <string>,
-    password: <string>,
+    password: <string>
 
 }
 ```
