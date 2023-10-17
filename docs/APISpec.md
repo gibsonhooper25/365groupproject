@@ -19,7 +19,7 @@ Returns the playlist with the given playlist_id.
     songs: <list>
 }
 ```
-### 1.5 Create Playlist - `/playlist/new` - PUT
+### 1.5 Create Curated Playlist - `/playlist/new/curated` - PUT
 Generates a list of songs from the given parameters and saves it to the backend.
 
 Input:
@@ -37,7 +37,23 @@ Returns:
     Playlist: <playlist id>
 }
 ```
-### 1.6 Update Playlist - `/playlist/{playlist_id}/add-song/{song_id}` or `/playlist/{playlist_id}/add-songs/{album_id}` - POST
+### 1.6 Create Personal Playlist - `/playlist/new/personal` - POST
+Allows users to create empty playlists for them to populate themselves.
+
+Input:
+```commandline
+{
+    user: <user id>,
+    name: <string>
+}
+```
+Returns:
+```commandline
+{
+    Playlist: <playlist id>
+}
+```
+### 1.7 Update Playlist - `/playlist/{playlist_id}/add-song/{song_id}` or `/playlist/{playlist_id}/add-songs/{album_id}` - POST
 Allows the user to add a song or all songs in an album to a pre-existing playlist.
 
 Returns:
@@ -47,7 +63,7 @@ Returns:
 }
 ```
 
-### 1.7 Comment - `/songs/{song_id}/comment/new` or `/albums/{album_id}/songs/{song_id}/comment/new` - POST
+### 1.8 Comment - `/songs/{song_id}/comment/new` or `/albums/{album_id}/songs/{song_id}/comment/new` - POST
 Allows the user to post a comment to the discussion thread for a given song.
 
 Input:
@@ -63,7 +79,7 @@ Returns:
     success: <boolean>
 }
 ```
-### 1.8 Rate - `/songs/{song_id}/rate` or `/albums/{album_id}/rate` - POST
+### 1.9 Rate - `/songs/{song_id}/rate` or `/albums/{album_id}/rate` - POST
 Allows user to leave a rating from 1 to 5 on a song or album.
 
 Input:
@@ -72,7 +88,7 @@ Input:
     rating: <int 1 to 5>,
 }
 ```
-### 1.9 Feedback - `/songs/{song_id}/rate/{rating}/feedback` or `/albums/{album_id}/rate/{rating}/feedback` - POST
+### 1.10 Feedback - `/songs/{song_id}/rate/{rating}/feedback` or `/albums/{album_id}/rate/{rating}/feedback` - POST
 Allows user to leave some feedback after they give it a rating. There will be enumerated feedback categories based on what the rating was.
 For example, a rating 1 category could be "Poor Sound Quality" while a rating 5 category could be "Excellent Lyricism".
 
@@ -82,7 +98,7 @@ Returns:
     feedback: <enum>
 }
 ```
-### 1.10 Search for song by name - `/songs/search/name` - GET
+### 1.11 Search for song by name - `/songs/search/name` - GET
 Allows users to search for song(s) by name.
 
 Input:
@@ -97,7 +113,7 @@ Returns:
     songs: <list>
 }
 ```
-### 1.11 Search for songs by genre - `/songs/search/genre` - GET
+### 1.12 Search for songs by genre - `/songs/search/genre` - GET
 Allows users to search for a bredth of songs by genre
 
 Input:
