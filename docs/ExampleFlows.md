@@ -15,7 +15,7 @@
   - to add one song, he calls `/playlist/{playlist_id}/add-song/{song_id}`
   - to add all songs in an album, he calls `/playlist/{playlist_id}/add-songs/{album_id}`
 - Once Jake thinks he has finished adding the songs he likes to his new playlist he can view the masterpeice he has created
-  - calls `/playlist/{playlist_id}`
+  - to see his playlist he calls `/playlist/{playlist_id}`
 
 ## Example 3
 - Bill Wurtz is a song artist known for creating very unique songs. Bill is releasing a new album and would like add it to Harmony API and see what people think of it. To add his new album bill will first create the album and the songs then add each of the songs to the album.
@@ -26,3 +26,4 @@
   - Bill veiws ratings and feedback for his new album with `/albums/{album_id}/reviews`
 - Bill wants to narrow down what songs people did and didn't like in his new album and goes to look at ratings and feedback for individual songs
   - Bill veiws ratings and feedback for each song in the new album with `/songs/{song_id}/reviews`
+- Satisfied that he knows what he did right and where he went wrong, Bill is ready to go off and write more song content
