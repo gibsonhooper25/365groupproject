@@ -79,26 +79,18 @@ Returns:
     success: <boolean>
 }
 ```
-### 1.9 Rate - `/songs/{song_id}/rate` or `/albums/{album_id}/rate` - POST
-Allows user to leave a rating from 1 to 5 on a song or album.
+### 1.9 Rate/Feedback - `/songs/{song_id}/rate` or `/albums/{album_id}/rate` - POST
+Allows user to leave a rating from 1 to 5 on a song or album and some feedback after they give it a rating. There will be enumerated feedback categories based on what the rating was.
+For example, a rating 1 category could be "Poor Sound Quality" while a rating 5 category could be "Excellent Lyricism".
 
 Input:
 ```commandline
 {
     rating: <int 1 to 5>,
-}
-```
-### 1.10 Feedback - `/songs/{song_id}/rate/{rating}/feedback` or `/albums/{album_id}/rate/{rating}/feedback` - POST
-Allows user to leave some feedback after they give it a rating. There will be enumerated feedback categories based on what the rating was.
-For example, a rating 1 category could be "Poor Sound Quality" while a rating 5 category could be "Excellent Lyricism".
-
-Returns: 
-```commandline
-{
     feedback: <enum>
 }
 ```
-### 1.11 Search for song by name - `/songs/search/name` - GET
+### 1.10 Search for song by name - `/songs/search/name` - GET
 Allows users to search for song(s) by name.
 
 Input:
@@ -113,7 +105,7 @@ Returns:
     songs: <list>
 }
 ```
-### 1.12 Search for songs by genre - `/songs/search/genre` - GET
+### 1.11 Search for songs by genre - `/songs/search/genre` - GET
 Allows users to search for a bredth of songs by genre
 
 Input:
