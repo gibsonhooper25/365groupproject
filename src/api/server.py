@@ -1,7 +1,7 @@
 from fastapi import FastAPI, exceptions
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
-from src.api import song
+from src.api import song, album
 import json
 import logging
 import sys
@@ -33,11 +33,7 @@ app.add_middleware(
 )
 
 app.include_router(song.router)
-#app.include_router(carts.router)
-#app.include_router(catalog.router)
-#app.include_router(bottler.router)
-#app.include_router(barrels.router)
-#app.include_router(admin.router)
+app.include_router(album.router)
 
 @app.exception_handler(exceptions.RequestValidationError)
 @app.exception_handler(ValidationError)

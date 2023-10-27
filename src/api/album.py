@@ -5,11 +5,11 @@ import sqlalchemy
 from src import database as db
 
 router = APIRouter(
-    prefix="/songs",
-    tags=["songs"],
+    prefix="/albums",
+    tags=["albums"],
     dependencies=[Depends(auth.get_api_key)],
 )
 
 @router.post("/new")
-def create_new_song():
+def create_new_album():
     pass
