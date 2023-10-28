@@ -144,6 +144,13 @@ Input:
     name: <name>
 }
 ```
+
+Returns:
+```commandline
+{
+    album_id: <id>
+}
+```
 ### 2.3 Add Song to Album - `/albums/{album_id}/add-song/{song_id}` - POST
 Adds song to given album
 
