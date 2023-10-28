@@ -13,17 +13,19 @@ router = APIRouter(
 )
 
 class Genre(str, Enum):
-    rock = "Rock"
     jazz = "Jazz"
-    pop = "Pop"
-    hip_hop = "Hip Hop"
-    dance = "Dance"
-    electronic = "Electronic"
-    disco = "Disco"
-    classical = "Classical"
     blues = "Blues"
-    heavy_metal = "Heavy Metal"
+    rnb = "RnB"
+    hip_hop = "Hip Hop"
     country = "Country"
+    pop = "Pop"
+    rock = "Rock"
+    classical = "Classical"
+    reggae = "Reggae"
+    folk = "Folk"
+    edm = "EDM"
+    indie = "Indie"
+    metal = "Metal"
     soundtrack = "Soundtrack"
 
 
