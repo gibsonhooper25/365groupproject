@@ -65,3 +65,39 @@ def create_album(new_album: NewAlbum):
             return {"album_id": new_id}
     except DBAPIError as error:
         print(f"Error returned: <<<{error}>>>")
+
+
+@router.post("/{album_id}/add-song/{song_id}")
+def add_song_to_album(album_id: int, song_id: int):
+    sql_to_execute = """INSERT INTO album_songs (album_id, song_id) VALUES
+    (:album_id, :song_id)"""
+    try:
+        with db.engine.begin() as connection:
+            connection.execute(sqlalchemy.text(sql_to_execute),
+            [{"album_id": album_id, "song_id": song_id}])
+            return "ok"  
+    except DBAPIError as error: 
+        return f"Error returned: <<<{error}>>>"
+
+    
+
+@router.get("/{album_id}")
+def get_songs_from_album(album_id: int):
+    sql_to_execute = """SELECT songs.title, songs.genre, songs.duration 
+    FROM album_songs
+    JOIN albums ON albums.id = album_songs.album_id 
+    JOIN songs ON songs.id = album_songs.song_id
+    WHERE album_id = :album_id"""
+    return_list = []
+    with db.engine.begin() as connection:
+        result = connection.execute(sqlalchemy.text(sql_to_execute),
+        [{"album_id": album_id}])
+
+        for row in result:
+            return_list.append({
+                "title": row.title,
+                "genre": row.genre,
+                "duration": row.duration
+            })
+
+    return return_list
