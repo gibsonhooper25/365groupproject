@@ -128,9 +128,12 @@ Creates a new song, unassociated with an album
 Input:
 ```commandline
 {
-    artist_id: <id>,
+  artist_ids: [<id>, ...],
+  song: {
+    title: <name>,
     genre: <enum>,
-    name: <name>
+    duration: <int>
+  }
 }
 ```
 ### 2.2 Create Album - `/albums/new` - POST
