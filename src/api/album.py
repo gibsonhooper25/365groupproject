@@ -101,3 +101,41 @@ def get_songs_from_album(album_id: int):
             })
 
     return return_list
+
+
+class AlbumFeedbackType(str, Enum):
+    quality = "sound quality"
+    lyrics = "lyrics"
+    vocals = "vocals"
+    melody = "melody"
+    originality = "originality"
+    overall = "overall"
+
+class AlbumFeedback(BaseModel):
+    rating: int
+    feedback_category: AlbumFeedbackType
+@router.post("/{album_id}/rate")
+def rate_album(album_id: int, feedback: AlbumFeedback):
+    sql_to_execute = """INSERT INTO feedback (rating, feedback_type, album_id) VALUES (:r, :f, :a)"""
+    try:
+        with db.engine.begin() as connection:
+            connection.execute(sqlalchemy.text(sql_to_execute),
+                                        [{"r": feedback.rating, "f": feedback.feedback_category, "a": album_id}])
+    except DBAPIError as error:
+        return f"Error returned: <<<{error}>>>"
+
+    return "Thank you for your feedback"
+@router.get("/{album_id}/reviews")
+def get_reviews_by_album(album_id: int):
+    sql_to_execute = """SELECT COUNT(*) AS total_reviews, SUM(rating) AS total_rating FROM feedback WHERE album_id = :album_id"""
+    try:
+        with db.engine.begin() as connection:
+            result = connection.execute(sqlalchemy.text(sql_to_execute),
+                                        [{"album_id": album_id}]).first()
+            if result.total_reviews == 0:
+                return "No ratings exist for given album"
+            avg_rating = "{:.2f}".format(result.total_rating / result.total_reviews)
+    except DBAPIError as error:
+        return f"Error returned: <<<{error}>>>"
+
+    return {"avg_rating": avg_rating}
