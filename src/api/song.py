@@ -29,9 +29,23 @@ class Genre(str, Enum):
     metal = "Metal"
     soundtrack = "Soundtrack"
 
+class Mood(str, Enum):
+    happy = "happy"
+    sad = "sad"
+    nostalgic = "nostalgic"
+    relazing = "relaxing"
+    energetic = "energetic"
+    angry = "angry"
+    uplifting = "uplifting"
+    calm = "calm"
+    motivational = "motivational"
+    experimental = "experimental"
+    
+
 class NewSong(BaseModel):
     title: str
     genre: Genre
+    moods: list[Mood]
     duration: int
 
 
@@ -43,17 +57,23 @@ def create_new_song(artist_ids: list[int], song: NewSong):
         with db.engine.begin() as connection:
             result = connection.execute(sqlalchemy.text(sql_to_execute), 
                 [{"title": song.title, "genre": song.genre, "duration": song.duration}])
-            first_row = result.first()
-        
+            id = result.first().id
+
+            for mood in song.moods:
+                sql_to_execute = """INSERT INTO mood_songs (mood, song)
+                VALUES (:mood, :song)"""
+                connection.execute(sqlalchemy.text(sql_to_execute), 
+                    [{"mood": mood.value, "song": id}])
+
             #in case of multiple artists
             for artist_id in artist_ids:
                 sql_to_execute = """INSERT INTO artist_songs (artist_id, song_id)
                 VALUES (:artist_id, :song_id)"""
                 connection.execute(sqlalchemy.text(sql_to_execute), 
-                    [{"artist_id": artist_id, "song_id": first_row.id}])
+                    [{"artist_id": artist_id, "song_id": id}])
     except DBAPIError as error:
         return f"Error returned: <<<{error}>>>"
 
-    return {"song_id": first_row.id}
+    return {"song_id": id}
 
 
