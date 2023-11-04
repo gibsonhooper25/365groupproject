@@ -5,6 +5,7 @@ from src import database as db
 from sqlalchemy.exc import DBAPIError
 from pydantic import BaseModel
 
+
 router = APIRouter(
     prefix="/playlists",
     tags=["playlists"],
@@ -18,10 +19,39 @@ songs = sqlalchemy.Table("songs", metadata_obj, autoload_with=db.engine)
 listeners = sqlalchemy.Table("listeners", metadata_obj, autoload_with=db.engine)
 artists = sqlalchemy.Table("artists", metadata_obj, autoload_with=db.engine)
 
-
 @router.post("/new/curated")
-def create_curated_playlist():
-    pass
+def create_curated_playlist(user_id: int, title: str, mood: song.Mood, length: int):
+    sql_to_execute = """
+    SELECT songs.id FROM songs
+    JOIN mood_songs ON songs.id = mood_songs.song
+    WHERE mood = :mood
+    ORDER BY RANDOM()
+    LIMIT :length 
+    """
+    try:
+        with db.engine.begin() as connection:
+            get_id = connection.execute(sqlalchemy.text("""
+                INSERT INTO playlists (creator_id, title, mood)
+                VALUES (:user_id, :title, :mood)
+                RETURNING id
+            """), [{"user_id": user_id, "title": title, "mood": mood}])
+            id = get_id.first().id
+
+            result = connection.execute(sqlalchemy.text(sql_to_execute), 
+                    [{"mood": mood, "length": length}])
+            for row in result:
+                sql_to_execute = """
+                    INSERT INTO playlist_songs (playlist_id, song_id)
+                    VALUES (:playlist_id, :song_id)
+                """
+                connection.execute(sqlalchemy.text(sql_to_execute), 
+                    [{"playlist_id": id, "song_id": row.id}])
+
+    except DBAPIError as error:
+        return f"Error returned: <<<{error}>>>"
+
+    return "playlist created"
+
 
 class NewPlaylist(BaseModel):
     listener: bool #true if listener, false if artist - used for mapping to account name
