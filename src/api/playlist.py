@@ -1,8 +1,9 @@
 import sqlalchemy
 from fastapi import APIRouter, Depends
-from src.api import auth
+from src.api import auth, song
 from src import database as db
 from sqlalchemy.exc import DBAPIError
+from pydantic import BaseModel
 
 router = APIRouter(
     prefix="/playlists",
@@ -14,15 +15,39 @@ metadata_obj = sqlalchemy.MetaData()
 playlists = sqlalchemy.Table("playlists", metadata_obj, autoload_with=db.engine)
 playlist_songs = sqlalchemy.Table("playlist_songs", metadata_obj, autoload_with=db.engine)
 songs = sqlalchemy.Table("songs", metadata_obj, autoload_with=db.engine)
+listeners = sqlalchemy.Table("listeners", metadata_obj, autoload_with=db.engine)
+artists = sqlalchemy.Table("artists", metadata_obj, autoload_with=db.engine)
 
 
 @router.post("/new/curated")
 def create_curated_playlist():
     pass
 
+class NewPlaylist(BaseModel):
+    listener: bool #true if listener, false if artist - used for mapping to account name
+    email: str
+    password: str
+    name: str
+    mood: song.Mood
+
 @router.post("/new/personal")
-def create_personal_playlist():
-    pass
+def create_personal_playlist(playlist_info: NewPlaylist):
+    if playlist_info.listener:
+        user_search_table = listeners
+    else:
+        user_search_table = artists
+    with db.engine.begin() as connection:
+        user_id_query = sqlalchemy.select(user_search_table.c.id, user_search_table.c.password).where(user_search_table.c.email == playlist_info.email)
+        user_id_query_result = connection.execute(user_id_query).first()
+        user_id = user_id_query_result.id
+        password = user_id_query_result.password
+        if not user_id:
+            return "No user exists for the given email"
+        if password != playlist_info.password:
+            return "Incorrect password"
+        insert_query = sqlalchemy.insert(playlists).values(creator_id=user_id, title=playlist_info.name, mood=playlist_info.mood)
+        connection.execute(insert_query)
+    return "New empty playlist created"
 
 @router.post("/{playlist_id}/add-song/{song_id}")
 def add_song_to_playlist(playlist_id: int, song_id: int):
