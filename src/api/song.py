@@ -50,13 +50,14 @@ class NewSong(BaseModel):
 
 
 @router.post("/new")
-def create_new_song(artist_ids: list[int], song: NewSong):
-    sql_to_execute = """INSERT INTO songs (title, genre, duration)
-    VALUES (:title, :genre, :duration) RETURNING id"""
+def create_new_song(album_id: int, artist_id: int, song: NewSong):
+    sql_to_execute = """INSERT INTO songs (title, genre, duration, album_id, artist_id)
+    VALUES (:title, :genre, :duration, :album_id, :artist_id) RETURNING id"""
     try:
         with db.engine.begin() as connection:
             result = connection.execute(sqlalchemy.text(sql_to_execute), 
-                [{"title": song.title, "genre": song.genre, "duration": song.duration}])
+                [{"title": song.title, "genre": song.genre, "duration": song.duration,
+                  "album_id": album_id, "artist_id": artist_id}])
             id = result.first().id
 
             for mood in song.moods:
@@ -65,12 +66,6 @@ def create_new_song(artist_ids: list[int], song: NewSong):
                 connection.execute(sqlalchemy.text(sql_to_execute), 
                     [{"mood": mood.value, "song": id}])
 
-            #in case of multiple artists
-            for artist_id in artist_ids:
-                sql_to_execute = """INSERT INTO artist_songs (artist_id, song_id)
-                VALUES (:artist_id, :song_id)"""
-                connection.execute(sqlalchemy.text(sql_to_execute), 
-                    [{"artist_id": artist_id, "song_id": id}])
     except DBAPIError as error:
         return f"Error returned: <<<{error}>>>"
 
