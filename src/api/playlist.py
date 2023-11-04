@@ -50,7 +50,7 @@ def create_curated_playlist(user_id: int, title: str, mood: song.Mood, length: i
     except DBAPIError as error:
         return f"Error returned: <<<{error}>>>"
 
-    return "playlist created"
+    return "Curated playlist created"
 
 
 class NewPlaylist(BaseModel):
@@ -110,8 +110,53 @@ def add_song_to_playlist(playlist_id: int, song_id: int):
         print(f"Error returned: <<<{error}>>>")
 
 @router.post("/{playlist_id}/add-songs/{album_id}")
-def add_album_songs_to_playlist():
-    pass
+def add_album_songs_to_playlist(playlist_id: int, album_id: int):
+    sql_to_execute = """
+    SELECT songs.id FROM albums
+    JOIN songs ON album_id = albums.id
+    WHERE album_id = :album_id
+    """
+    try:
+        with db.engine.begin() as connection:
+            result = connection.execute(sqlalchemy.text(sql_to_execute), 
+                    [{"album_id": album_id}])
+            if result.rowcount == 0:
+                return "No album exists for the given album ID"
+            
+            for row in result:
+                sql_to_execute = """
+                    INSERT INTO playlist_songs (playlist_id, song_id)
+                    SELECT :playlist_id, :song_id
+                    WHERE NOT EXISTS (
+                        SELECT 1
+                        FROM playlist_songs
+                        WHERE song_id = :song_id
+                    )
+                """
+                connection.execute(sqlalchemy.text(sql_to_execute), 
+                    [{"playlist_id": playlist_id, "song_id": row.id}])
+
+    except DBAPIError as error:
+        return f"Error returned: <<<{error}>>>"
+
+    return "Added album to playlist"
+
+@router.delete("/{playlist_id}/remove-songs/{song_id}")
+def delete_song_from_playlist(playlist_id: int, song_id: int):
+    try:
+        with db.engine.begin() as connection:
+            result = connection.execute(sqlalchemy.text("""
+                DELETE FROM playlist_songs
+                WHERE playlist_id = :playlist_id AND song_id = :song_id 
+            """),
+            [{"playlist_id": playlist_id, "song_id": song_id}])
+        if result.rowcount == 0:
+            return "Song not removed, either no playlist exists for the given playlist ID or no song exists for the given song ID "
+             
+    except DBAPIError as error:
+        return f"Error returned: <<<{error}>>>"
+
+    return "Removed song from playlist"
 
 @router.get("/{playlist_id}")
 def get_playlist(playlist_id: int):
