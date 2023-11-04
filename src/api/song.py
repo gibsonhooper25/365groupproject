@@ -33,7 +33,7 @@ class Mood(str, Enum):
     happy = "happy"
     sad = "sad"
     nostalgic = "nostalgic"
-    relazing = "relaxing"
+    relaxing = "relaxing"
     energetic = "energetic"
     angry = "angry"
     uplifting = "uplifting"
