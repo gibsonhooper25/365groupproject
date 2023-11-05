@@ -46,11 +46,10 @@ def create_curated_playlist(user_id: int, title: str, mood: song.Mood, length: i
                 """
                 connection.execute(sqlalchemy.text(sql_to_execute), 
                     [{"playlist_id": id, "song_id": row.id}])
+            return {"Playlist": id}
 
     except DBAPIError as error:
         return f"Error returned: <<<{error}>>>"
-
-    return "Curated playlist created"
 
 
 class NewPlaylist(BaseModel):
@@ -75,9 +74,9 @@ def create_personal_playlist(playlist_info: NewPlaylist):
             return "No user exists for the given email"
         if password != playlist_info.password:
             return "Incorrect password"
-        insert_query = sqlalchemy.insert(playlists).values(creator_id=user_id, title=playlist_info.name, mood=playlist_info.mood)
-        connection.execute(insert_query)
-    return "New empty playlist created"
+        insert_query = sqlalchemy.insert(playlists).values(creator_id=user_id, title=playlist_info.name, mood=playlist_info.mood).returning(playlists.c.id)
+        new_playlist_id = connection.execute(insert_query).scalar_one()
+    return {"Playlist": new_playlist_id}
 
 @router.post("/{playlist_id}/add-song/{song_id}")
 def add_song_to_playlist(playlist_id: int, song_id: int):
