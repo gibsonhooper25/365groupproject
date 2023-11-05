@@ -88,7 +88,12 @@ Input:
 {
     rating: <int 1 to 5>,
     feedback: <enum>
+    user: <user_id>
 }
+```
+Returns:
+```commandline
+"Thank you for your feedback"
 ```
 ### 1.10 Search for song by name - `/songs/search/name` - GET
 Allows users to search for song(s) by name.
