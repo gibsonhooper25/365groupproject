@@ -2,11 +2,11 @@
 ## Example 1
 - Listener wants to exercise for 30 minutes, so they want to create a 12 song playlist
   - calls `/playlist/new/curated` with parameters `length=12`, `mood=ENERGETIC` also providing user ID and a name for the playlist
-- They especially like one of the songs on this playlist, so they click on it to view more information
-  - `/songs/{song_id}` shows them the song information
+- They especially like one of the songs on this playlist, so they choose to view more information
+  - `/songs/{song_id}/reviews` shows them the song's reviews
 - They decide to leave a 5-star review on this song
-  - `/songs/{song_id}/rate` with parameter `rating=5`
-  - this takes them to `/songs/{song_id}/rate/5/feedback` where they can select a feedback category to submit
+  - `/songs/{song_id}/rate` with parameter `rating=5` and `feedback=melody`
+
 
 ## Example 2
 - Jake is a picky listener who only listens to songs that fit his current vibe. As a person who already knows his music tastes, he wants to make his own playlist and add entire albums to his list at once, so that he can easily build lists with songs from artists he likes. To do this he starts by creating an empty playlist

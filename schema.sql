@@ -111,6 +111,12 @@ values
     'Indie',
     'billwurtz@example.com',
     'DontGoToSchool'
+  ),
+  (
+    'Billy Joel',
+    'Pop',
+    'billyjoel@gmail.com',
+    'expassword'
   );
 
 insert into
@@ -127,6 +133,12 @@ values
     'janedoe',
     'janedoe@example.com',
     'password456'
+  ),
+  (
+    'Jake the Dog',
+    'finnsfriend',
+    'jakemertens@example.com',
+    'BaconPancakes'
   );
 
 insert into
@@ -148,3 +160,30 @@ values
     2, 
     2
   );
+
+insert into
+  albums (artist_id, title, genre)
+values
+  (
+    2,
+    'The Stranger',
+    'Pop'
+  )
+
+insert into 
+  songs (title, genre, duration, album_id, artist_id)
+values
+  (
+    'Uptown Girl',
+    'Pop',
+    194,
+    None,
+    2
+  ),
+  (
+    "We Didn't Start The Fire",
+    'Pop',
+    287,
+    1,
+    2
+  )
