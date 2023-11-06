@@ -75,7 +75,7 @@ def create_personal_playlist(playlist_info: NewPlaylist):
         if password != playlist_info.password:
             return "Incorrect password"
         insert_query = sqlalchemy.insert(playlists).values(creator_id=user_id, title=playlist_info.name, mood=playlist_info.mood).returning(playlists.c.id)
-        new_playlist_id = connection.execute(insert_query).scalar_one()
+        new_playlist_id = connection.execute(insert_query).first().id
     return {"Playlist": new_playlist_id}
 
 @router.post("/{playlist_id}/add-song/{song_id}")
