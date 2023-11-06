@@ -119,10 +119,9 @@ def add_album_songs_to_playlist(playlist_id: int, album_id: int):
         with db.engine.begin() as connection:
             result = connection.execute(sqlalchemy.text(sql_to_execute), 
                     [{"album_id": album_id}])
-            if result.rowcount == 0:
-                return "No album exists for the given album ID"
-            
+            rowcount = 0
             for row in result:
+                rowcount += 1
                 sql_to_execute = """
                     INSERT INTO playlist_songs (playlist_id, song_id)
                     SELECT :playlist_id, :song_id
@@ -134,11 +133,12 @@ def add_album_songs_to_playlist(playlist_id: int, album_id: int):
                 """
                 connection.execute(sqlalchemy.text(sql_to_execute), 
                     [{"playlist_id": playlist_id, "song_id": row.id}])
+            if rowcount == 0:
+                return "No album exists for the given album ID"
+            return "Added album to playlist"
 
     except DBAPIError as error:
         return f"Error returned: <<<{error}>>>"
-
-    return "Added album to playlist"
 
 @router.delete("/{playlist_id}/remove-songs/{song_id}")
 def delete_song_from_playlist(playlist_id: int, song_id: int):
