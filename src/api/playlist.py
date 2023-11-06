@@ -126,9 +126,9 @@ def add_album_songs_to_playlist(playlist_id: int, album_id: int):
                     INSERT INTO playlist_songs (playlist_id, song_id)
                     SELECT :playlist_id, :song_id
                     WHERE NOT EXISTS (
-                        SELECT 1
+                        SELECT *
                         FROM playlist_songs
-                        WHERE song_id = :song_id
+                        WHERE playlist_id = :playlist_id and song_id = :song_id
                     )
                 """
                 connection.execute(sqlalchemy.text(sql_to_execute), 
