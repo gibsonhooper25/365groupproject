@@ -48,6 +48,29 @@ class NewSong(BaseModel):
     moods: list[Mood]
     duration: int
 
+@router.get("/")
+def get_all_songs():
+    sql = """SELECT songs.title, songs.genre, duration, artists.name,
+     albums.title AS album FROM songs
+    JOIN artists ON artist_id = artists.id
+    LEFT JOIN albums ON album_id = albums.id"""
+    return_list = []
+    try:
+        with db.engine.begin() as connection:
+            result = connection.execute(sqlalchemy.text(sql))
+            for row in result:
+                return_list.append({
+                    "Title": row.title,
+                    "Artist": row.name,
+                    "Album": row.album,
+                    "Genre": row.genre,
+                    "Duration":row.duration,
+
+                })
+
+    except DBAPIError as error:
+        return f"Error returned: <<<{error}>>>"
+    return return_list
 
 @router.post("/new")
 def create_new_song(album_id: int, artist_id: int, song: NewSong):
