@@ -16,6 +16,7 @@ Curl:
 curl -X 'POST' \
   'https://harmony-api-service.onrender.com/albums/new' \
   -H 'accept: application/json' \
+  -H 'access_token: harmony' \
   -H 'Content-Type: application/json' \
   -d '{
   "artist_id": 1,
