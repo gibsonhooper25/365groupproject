@@ -46,11 +46,10 @@ def create_curated_playlist(user_id: int, title: str, mood: song.Mood, length: i
                 """
                 connection.execute(sqlalchemy.text(sql_to_execute), 
                     [{"playlist_id": id, "song_id": row.id}])
+            return {"Playlist": id}
 
     except DBAPIError as error:
         return f"Error returned: <<<{error}>>>"
-
-    return "Curated playlist created"
 
 
 class NewPlaylist(BaseModel):
@@ -75,9 +74,9 @@ def create_personal_playlist(playlist_info: NewPlaylist):
             return "No user exists for the given email"
         if password != playlist_info.password:
             return "Incorrect password"
-        insert_query = sqlalchemy.insert(playlists).values(creator_id=user_id, title=playlist_info.name, mood=playlist_info.mood)
-        connection.execute(insert_query)
-    return "New empty playlist created"
+        insert_query = sqlalchemy.insert(playlists).values(creator_id=user_id, title=playlist_info.name, mood=playlist_info.mood).returning(playlists.c.id)
+        new_playlist_id = connection.execute(insert_query).first().id
+    return {"Playlist": new_playlist_id}
 
 @router.post("/{playlist_id}/add-song/{song_id}")
 def add_song_to_playlist(playlist_id: int, song_id: int):
@@ -120,26 +119,26 @@ def add_album_songs_to_playlist(playlist_id: int, album_id: int):
         with db.engine.begin() as connection:
             result = connection.execute(sqlalchemy.text(sql_to_execute), 
                     [{"album_id": album_id}])
-            if result.rowcount == 0:
-                return "No album exists for the given album ID"
-            
+            rowcount = 0
             for row in result:
+                rowcount += 1
                 sql_to_execute = """
                     INSERT INTO playlist_songs (playlist_id, song_id)
                     SELECT :playlist_id, :song_id
                     WHERE NOT EXISTS (
-                        SELECT 1
+                        SELECT *
                         FROM playlist_songs
-                        WHERE song_id = :song_id
+                        WHERE playlist_id = :playlist_id and song_id = :song_id
                     )
                 """
                 connection.execute(sqlalchemy.text(sql_to_execute), 
                     [{"playlist_id": playlist_id, "song_id": row.id}])
+            if rowcount == 0:
+                return "No album exists for the given album ID"
+            return "Added album to playlist"
 
     except DBAPIError as error:
         return f"Error returned: <<<{error}>>>"
-
-    return "Added album to playlist"
 
 @router.delete("/{playlist_id}/remove-songs/{song_id}")
 def delete_song_from_playlist(playlist_id: int, song_id: int):

@@ -114,13 +114,15 @@ class AlbumFeedbackType(str, Enum):
 class AlbumFeedback(BaseModel):
     rating: int
     feedback_category: AlbumFeedbackType
+    user: int
+
 @router.post("/{album_id}/rate")
 def rate_album(album_id: int, feedback: AlbumFeedback):
-    sql_to_execute = """INSERT INTO feedback (rating, feedback_type, album_id) VALUES (:r, :f, :a)"""
+    sql_to_execute = """INSERT INTO feedback (rating, feedback_type, user_id, album_id) VALUES (:r, :f, :u, :a)"""
     try:
         with db.engine.begin() as connection:
             connection.execute(sqlalchemy.text(sql_to_execute),
-                                        [{"r": feedback.rating, "f": feedback.feedback_category, "a": album_id}])
+                                        [{"r": feedback.rating, "f": feedback.feedback_category, "u":feedback.user, "a": album_id}])
     except DBAPIError as error:
         return f"Error returned: <<<{error}>>>"
 
