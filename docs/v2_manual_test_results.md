@@ -13,6 +13,7 @@ Curl:
 curl -X 'POST' \
   'https://harmony-api-service.onrender.com/playlists/new/curated?user_id=2&title=Workout&mood=energetic&length=12' \
   -H 'accept: application/json' \
+  -H 'access_token: harmony' \
   -d ''
 ```
 
