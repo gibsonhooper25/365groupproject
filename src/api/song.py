@@ -72,15 +72,40 @@ def get_all_songs():
         return f"Error returned: <<<{error}>>>"
     return return_list
 
+@router.get("/{song_id}")
+def get_songs_from_album(song_id: int):
+    sql_to_execute = """
+        SELECT songs.title as song, songs.genre, songs.duration, albums.title as album, artists.name as artist
+        FROM songs
+        JOIN artists ON artists.id = songs.artist_id
+        LEFT JOIN albums ON albums.id = songs.album_id 
+        WHERE songs.id = :song_id
+    """
+    return_list = []
+    try:
+        with db.engine.begin() as connection:
+            result = connection.execute(sqlalchemy.text(sql_to_execute),
+            [{"song_id": song_id}])
+            song = result.first()
+            return {
+                "song": song.song,
+                "genre": song.genre,
+                "duration": song.duration,
+                "album": song.album,
+                "artist": song.artist
+            }
+    except DBAPIError as error:
+        return f"Error returned: <<<{error}>>>"
+
 @router.post("/new")
-def create_new_song(album_id: int, artist_id: int, song: NewSong):
-    sql_to_execute = """INSERT INTO songs (title, genre, duration, album_id, artist_id)
-    VALUES (:title, :genre, :duration, :album_id, :artist_id) RETURNING id"""
+def create_new_song(artist_id: int, song: NewSong):
+    sql_to_execute = """INSERT INTO songs (title, genre, duration, artist_id)
+    VALUES (:title, :genre, :duration, :artist_id) RETURNING id"""
     try:
         with db.engine.begin() as connection:
             result = connection.execute(sqlalchemy.text(sql_to_execute), 
                 [{"title": song.title, "genre": song.genre, "duration": song.duration,
-                  "album_id": album_id, "artist_id": artist_id}])
+                    "artist_id": artist_id}])
             id = result.first().id
 
             for mood in song.moods:
