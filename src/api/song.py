@@ -50,7 +50,7 @@ class NewSong(BaseModel):
 
 @router.get("/")
 def get_all_songs():
-    sql = """SELECT songs.title, songs.genre, duration, artists.name,
+    sql = """SELECT songs.id, songs.title, songs.genre, duration, artists.name,
      albums.title AS album FROM songs
     JOIN artists ON artist_id = artists.id
     LEFT JOIN albums ON album_id = albums.id"""
@@ -60,6 +60,7 @@ def get_all_songs():
             result = connection.execute(sqlalchemy.text(sql))
             for row in result:
                 return_list.append({
+                    "Id": row.id,
                     "Title": row.title,
                     "Artist": row.name,
                     "Album": row.album,
