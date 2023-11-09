@@ -39,9 +39,8 @@ curl -X 'POST' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{
-  "artist_ids": [
-    1
-  ],
+  "
+  "artist_id": 1,
   "song": {
     "title": "Alphabet Shuffle",
     "genre": "Indie",
