@@ -140,7 +140,7 @@ def add_album_songs_to_playlist(playlist_id: int, album_id: int):
     except DBAPIError as error:
         return f"Error returned: <<<{error}>>>"
 
-@router.delete("/{playlist_id}/remove-songs/{song_id}")
+@router.delete("/{playlist_id}/remove-song/{song_id}")
 def delete_song_from_playlist(playlist_id: int, song_id: int):
     try:
         with db.engine.begin() as connection:
