@@ -83,11 +83,11 @@ def add_song_to_album(album_id: int, song_id: int):
 
 @router.get("/{album_id}")
 def get_songs_from_album(album_id: int):
-    sql_to_execute = """SELECT songs.title, songs.genre, songs.duration 
-    FROM album_songs
-    JOIN albums ON albums.id = album_songs.album_id 
-    JOIN songs ON songs.id = album_songs.song_id
-    WHERE album_id = :album_id"""
+    sql_to_execute = """
+        SELECT songs.title, songs.genre, songs.duration 
+        FROM songs
+        WHERE album_id = :album_id
+    """
     return_list = []
     with db.engine.begin() as connection:
         result = connection.execute(sqlalchemy.text(sql_to_execute),
