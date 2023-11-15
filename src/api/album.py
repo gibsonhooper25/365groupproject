@@ -5,29 +5,13 @@ import sqlalchemy
 from sqlalchemy import *
 from sqlalchemy.exc import DBAPIError
 from src import database as db
+from src.api.song import Genre
 
 router = APIRouter(
     prefix="/albums",
     tags=["albums"],
     dependencies=[Depends(auth.get_api_key)],
 )
-
-class Genre(str, Enum):
-    jazz = "Jazz"
-    blues = "Blues"
-    rnb = "RnB"
-    hip_hop = "Hip Hop"
-    country = "Country"
-    pop = "Pop"
-    rock = "Rock"
-    classical = "Classical"
-    reggae = "Reggae"
-    folk = "Folk"
-    edm = "EDM"
-    indie = "Indie"
-    metal = "Metal"
-    soundtrack = "Soundtrack"
-
 
 # Use reflection to derive table schema.
 metadata_obj = sqlalchemy.MetaData()
