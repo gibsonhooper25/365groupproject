@@ -122,9 +122,9 @@ def add_album_songs_to_playlist(playlist_id: int, album_id: int):
         with db.engine.begin() as connection:
             result = connection.execute(sqlalchemy.text(sql_to_execute), 
                     [{"album_id": album_id}])
-            rowcount = 0
+            album_exists = False
             for row in result:
-                rowcount += 1
+                album_exists = True
                 sql_to_execute = """
                     INSERT INTO playlist_songs (playlist_id, song_id)
                     SELECT :playlist_id, :song_id
@@ -136,7 +136,7 @@ def add_album_songs_to_playlist(playlist_id: int, album_id: int):
                 """
                 connection.execute(sqlalchemy.text(sql_to_execute), 
                     [{"playlist_id": playlist_id, "song_id": row.id}])
-            if rowcount == 0:
+            if album_exists:
                 return "No album exists for the given album ID"
             return "Added album to playlist"
 
