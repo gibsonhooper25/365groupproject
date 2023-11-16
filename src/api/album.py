@@ -67,24 +67,27 @@ def add_song_to_album(album_id: int, song_id: int):
 
 @router.get("/{album_id}")
 def get_songs_from_album(album_id: int):
-    sql_to_execute = """
-        SELECT songs.title, songs.genre, songs.duration 
-        FROM songs
-        WHERE album_id = :album_id
-    """
-    return_list = []
-    with db.engine.begin() as connection:
-        result = connection.execute(sqlalchemy.text(sql_to_execute),
-        [{"album_id": album_id}])
+    try:
+        sql_to_execute = """
+            SELECT songs.title, songs.genre, songs.duration 
+            FROM songs
+            WHERE album_id = :album_id
+        """
+        return_list = []
+        with db.engine.begin() as connection:
+            result = connection.execute(sqlalchemy.text(sql_to_execute),
+            [{"album_id": album_id}])
 
-        for row in result:
-            return_list.append({
-                "title": row.title,
-                "genre": row.genre,
-                "duration": row.duration
-            })
+            for row in result:
+                return_list.append({
+                    "title": row.title,
+                    "genre": row.genre,
+                    "duration": row.duration
+                })
 
-    return return_list
+        return return_list
+    except DBAPIError as error:
+        print(f"Error returned: <<<{error}>>>")
 
 
 class AlbumFeedbackType(str, Enum):

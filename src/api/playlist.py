@@ -61,22 +61,25 @@ class NewPlaylist(BaseModel):
 
 @router.post("/new/personal")
 def create_personal_playlist(playlist_info: NewPlaylist):
-    if playlist_info.listener:
-        user_search_table = listeners
-    else:
-        user_search_table = artists
-    with db.engine.begin() as connection:
-        user_id_query = sqlalchemy.select(user_search_table.c.id, user_search_table.c.password).where(user_search_table.c.email == playlist_info.email)
-        user_id_query_result = connection.execute(user_id_query).first()
-        user_id = user_id_query_result.id
-        password = user_id_query_result.password
-        if not user_id:
-            return "No user exists for the given email"
-        if password != playlist_info.password:
-            return "Incorrect password"
-        insert_query = sqlalchemy.insert(playlists).values(creator_id=user_id, title=playlist_info.name, mood=playlist_info.mood).returning(playlists.c.id)
-        new_playlist_id = connection.execute(insert_query).first().id
-    return {"Playlist": new_playlist_id}
+    try:
+        if playlist_info.listener:
+            user_search_table = listeners
+        else:
+            user_search_table = artists
+        with db.engine.begin() as connection:
+            user_id_query = sqlalchemy.select(user_search_table.c.id, user_search_table.c.password).where(user_search_table.c.email == playlist_info.email)
+            user_id_query_result = connection.execute(user_id_query).first()
+            user_id = user_id_query_result.id
+            password = user_id_query_result.password
+            if not user_id:
+                return "No user exists for the given email"
+            if password != playlist_info.password:
+                return "Incorrect password"
+            insert_query = sqlalchemy.insert(playlists).values(creator_id=user_id, title=playlist_info.name, mood=playlist_info.mood).returning(playlists.c.id)
+            new_playlist_id = connection.execute(insert_query).first().id
+        return {"Playlist": new_playlist_id}
+    except DBAPIError as error:
+        print(f"Error returned: <<<{error}>>>")
 
 @router.post("/{playlist_id}/add-song/{song_id}")
 def add_song_to_playlist(playlist_id: int, song_id: int):
