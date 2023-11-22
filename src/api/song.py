@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, conint
 from src.api import auth
 import sqlalchemy
 from src import database as db
@@ -121,7 +121,7 @@ def create_new_song(artist_id: int, song: NewSong):
     return {"song_id": id}
 
 
-class SongFeedbackType(str, Enum):
+class FeedbackType(str, Enum):
     quality = "sound quality"
     lyrics = "lyrics"
     vocals = "vocals"
@@ -129,22 +129,33 @@ class SongFeedbackType(str, Enum):
     originality = "originality"
     overall = "overall"
 
-class SongFeedback(BaseModel):
-    rating: int
-    feedback_category: SongFeedbackType
+class Feedback(BaseModel):
+    rating: conint(ge=1, le=5)
+    feedback_category: FeedbackType
     user: int
 
+def song_exists(song_id, connection):
+    sql_to_execute = """SELECT * from songs WHERE id = :song_id"""
+    exists = connection.execute(sqlalchemy.text(sql_to_execute),
+                                [{"song_id": song_id}]).fetchone()
+    if exists:
+        return True
+    else:
+        return False
+
 @router.post("/{song_id}/rate")
-def rate_song(song_id: int, feedback: SongFeedback):
+def rate_song(song_id: int, feedback: Feedback):
     sql = """INSERT INTO feedback (rating, feedback_type, user_id, song_id) VALUES (:r, :f, :u, :s)"""
     try:
         with db.engine.begin() as connection:
-            connection.execute(sqlalchemy.text(sql),
-                                        [{"r": feedback.rating, "f": feedback.feedback_category, "u":feedback.user, "s": song_id}])
+            if song_exists(song_id, connection):
+                connection.execute(sqlalchemy.text(sql),
+                                            [{"r": feedback.rating, "f": feedback.feedback_category, "u":feedback.user, "s": song_id}])
+                return "Thank you for your feedback"
+            else:
+                return "Given Song Id does not exist"
     except DBAPIError as error:
         return f"Error returned: <<<{error}>>>"
-
-    return "Thank you for your feedback"
 
 @router.get("/{song_id}/reviews")
 def get_reviews_by_song(song_id: int):
