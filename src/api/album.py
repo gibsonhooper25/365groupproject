@@ -16,10 +16,10 @@ router = APIRouter(
 # Use reflection to derive table schema.
 metadata_obj = sqlalchemy.MetaData()
 albums = sqlalchemy.Table("albums", metadata_obj, autoload_with=db.engine)
-artists = sqlalchemy.Table("artists", metadata_obj, autoload_with=db.engine)
+users = sqlalchemy.Table("users", metadata_obj, autoload_with=db.engine)
 
 class NewAlbum(BaseModel):
-    artist_id: int
+    user_id: int
     name: str
     genre: Genre
 
@@ -28,23 +28,23 @@ def create_album(new_album: NewAlbum):
     try:
         with db.engine.begin() as conn:
             exists_criteria = (
-                select(artists.c.id).
-                where(artists.c.id == new_album.artist_id).
+                select(users.c.id).
+                where((users.c.id == new_album.user_id) & (users.c.user_type != 'listener')).
                 exists()
             )
-            artist_exists = conn.execute(select(artists.c.id).where(exists_criteria)).scalar()
+            artist_exists = conn.execute(select(users.c.id).where(exists_criteria)).scalar()
 
             if artist_exists:
                 new_id = conn.execute(
                 sqlalchemy.insert(albums).values(
-                        artist_id=new_album.artist_id,
+                        artist_id=new_album.user_id,
                         title=new_album.name,
                         genre=new_album.genre, 
                 ).returning(albums.c.id)).scalar_one()
             else:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST, 
-                    detail="bad request: artist with the provided artist_id does not exist"
+                    detail="bad request: artist with the provided user_id does not exist"
                 )
             return {"album_id": new_id}
     except DBAPIError as error:

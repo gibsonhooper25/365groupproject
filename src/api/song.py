@@ -50,9 +50,9 @@ class NewSong(BaseModel):
 
 @router.get("/")
 def get_all_songs():
-    sql = """SELECT songs.id, songs.title, songs.genre, duration, artists.name,
+    sql = """SELECT songs.id, songs.title, songs.genre, duration, users.name,
      albums.title AS album FROM songs
-    JOIN artists ON artist_id = artists.id
+    JOIN users ON songs.artist_id = users.id
     LEFT JOIN albums ON album_id = albums.id"""
     return_list = []
     try:
@@ -60,7 +60,6 @@ def get_all_songs():
             result = connection.execute(sqlalchemy.text(sql))
             for row in result:
                 return_list.append({
-                    "Id": row.id,
                     "Title": row.title,
                     "Artist": row.name,
                     "Album": row.album,
@@ -74,20 +73,21 @@ def get_all_songs():
     return return_list
 
 @router.get("/{song_id}")
-def get_songs_from_album(song_id: int):
+def get_song(song_id: int):
     sql_to_execute = """
-        SELECT songs.title as song, songs.genre, songs.duration, albums.title as album, artists.name as artist
+        SELECT songs.title as song, songs.genre, songs.duration, albums.title as album, users.name as artist
         FROM songs
-        JOIN artists ON artists.id = songs.artist_id
+        JOIN users ON users.id = songs.artist_id
         LEFT JOIN albums ON albums.id = songs.album_id 
         WHERE songs.id = :song_id
     """
-    return_list = []
     try:
         with db.engine.begin() as connection:
             result = connection.execute(sqlalchemy.text(sql_to_execute),
             [{"song_id": song_id}])
             song = result.first()
+            if not song:
+                return "Song with given id does not exist"
             return {
                 "song": song.song,
                 "genre": song.genre,
