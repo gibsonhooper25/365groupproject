@@ -5,7 +5,7 @@ import sqlalchemy
 from sqlalchemy import *
 from sqlalchemy.exc import DBAPIError
 from src import database as db
-from src.api.song import Genre
+from src.api.song import Genre, Feedback, song_exists
 
 router = APIRouter(
     prefix="/albums",
@@ -50,20 +50,28 @@ def create_album(new_album: NewAlbum):
     except DBAPIError as error:
         print(f"Error returned: <<<{error}>>>")
 
+def album_exists(album_id, connection):
+    sql_to_execute = """SELECT * from albums WHERE id = :album_id"""
+    exists = connection.execute(sqlalchemy.text(sql_to_execute),
+                                [{"album_id": album_id}]).fetchone()
+    if exists:
+        return True
+    else:
+        return False
 
 @router.post("/{album_id}/add-song/{song_id}")
 def add_song_to_album(album_id: int, song_id: int):
-    sql_to_execute = """INSERT INTO album_songs (album_id, song_id) VALUES
-    (:album_id, :song_id)"""
+    sql_to_execute = """UPDATE songs SET album_id = :album_id where id = :song_id"""
     try:
         with db.engine.begin() as connection:
-            connection.execute(sqlalchemy.text(sql_to_execute),
-            [{"album_id": album_id, "song_id": song_id}])
-            return "ok"  
+            if album_exists(album_id, connection) and song_exists(song_id, connection):
+                connection.execute(sqlalchemy.text(sql_to_execute),
+                [{"album_id": album_id, "song_id": song_id}])
+                return "ok"  
+            else:
+                return "Given Album Id or Song Id does not exist"
     except DBAPIError as error: 
         return f"Error returned: <<<{error}>>>"
-
-    
 
 @router.get("/{album_id}")
 def get_songs_from_album(album_id: int):
@@ -89,31 +97,20 @@ def get_songs_from_album(album_id: int):
     except DBAPIError as error:
         print(f"Error returned: <<<{error}>>>")
 
-
-class AlbumFeedbackType(str, Enum):
-    quality = "sound quality"
-    lyrics = "lyrics"
-    vocals = "vocals"
-    melody = "melody"
-    originality = "originality"
-    overall = "overall"
-
-class AlbumFeedback(BaseModel):
-    rating: int
-    feedback_category: AlbumFeedbackType
-    user: int
-
 @router.post("/{album_id}/rate")
-def rate_album(album_id: int, feedback: AlbumFeedback):
+def rate_album(album_id: int, feedback: Feedback):
     sql_to_execute = """INSERT INTO feedback (rating, feedback_type, user_id, album_id) VALUES (:r, :f, :u, :a)"""
     try:
         with db.engine.begin() as connection:
-            connection.execute(sqlalchemy.text(sql_to_execute),
-                                        [{"r": feedback.rating, "f": feedback.feedback_category, "u":feedback.user, "a": album_id}])
+            if album_exists(album_id, connection):
+                connection.execute(sqlalchemy.text(sql_to_execute),
+                                            [{"r": feedback.rating, "f": feedback.feedback_category, "u":feedback.user, "a": album_id}])
+                return "Thank you for your feedback"
+            else:
+                return "Given Album Id does not exist"
     except DBAPIError as error:
         return f"Error returned: <<<{error}>>>"
 
-    return "Thank you for your feedback"
 @router.get("/{album_id}/reviews")
 def get_reviews_by_album(album_id: int):
     sql_to_execute = """SELECT COUNT(*) AS total_reviews, SUM(rating) AS total_rating FROM feedback WHERE album_id = :album_id"""
