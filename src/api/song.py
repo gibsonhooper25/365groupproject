@@ -148,10 +148,15 @@ def rate_song(song_id: int, feedback: Feedback):
     sql = """INSERT INTO feedback (rating, feedback_type, user_id, song_id) VALUES (:r, :f, :u, :s)"""
     try:
         with db.engine.begin() as connection:
-            if song_exists(song_id, connection):
+            result = connection.execute(sqlalchemy.text(
+                """
+                SELECT title FROM songs WHERE id = :song_id
+                """), [{"song_id": song_id}])
+            if result.rowcount != 0:
                 connection.execute(sqlalchemy.text(sql),
                                             [{"r": feedback.rating, "f": feedback.feedback_category, "u":feedback.user, "s": song_id}])
-                return "Thank you for your feedback"
+                return "You gave " +result.first().title + " a " + str(feedback.rating) + \
+                " for category: " + feedback.feedback_category + ". Thank you for your feedback"
             else:
                 return "Given Song Id does not exist"
     except DBAPIError as error:

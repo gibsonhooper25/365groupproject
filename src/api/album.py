@@ -112,10 +112,16 @@ def rate_album(album_id: int, feedback: Feedback):
     sql_to_execute = """INSERT INTO feedback (rating, feedback_type, user_id, album_id) VALUES (:r, :f, :u, :a)"""
     try:
         with db.engine.begin() as connection:
-            if album_exists(album_id, connection):
+            result = connection.execute(sqlalchemy.text(
+                """
+                SELECT title FROM albums WHERE id = :album_id
+                """), [{"album_id": album_id}])
+            if result.rowcount != 0:
                 connection.execute(sqlalchemy.text(sql_to_execute),
-                                            [{"r": feedback.rating, "f": feedback.feedback_category, "u":feedback.user, "a": album_id}])
-                return "Thank you for your feedback"
+                [{"r": feedback.rating, "f": feedback.feedback_category, "u":feedback.user, "a": album_id}])
+                
+                return "You gave " +result.first().title + " a " + str(feedback.rating) + \
+                " for category: " + feedback.feedback_category + ". Thank you for your feedback"
             else:
                 return "Given Album Id does not exist"
     except DBAPIError as error:
