@@ -92,12 +92,14 @@ def add_song_to_playlist(playlist_id: int, song_id: int):
                 return "No song exists for the given song ID"
 
             #check if the song is already in the playlist, return if it is
-            playlist_song_query = sqlalchemy.select(playlist_songs.c.song_id).where(playlist_songs.c.playlist_id == playlist_id)
+            playlist_song_query = sqlalchemy.select(playlist_songs.c.song_id).where(
+                sqlalchemy.and_(playlist_songs.c.playlist_id == playlist_id, 
+                                playlist_songs.c.song_id == song_id)
+            )
             songs_in_playlist = connection.execute(playlist_song_query)
-            for song in songs_in_playlist:
-                if song.song_id == song_id:
-                    return "Song is already in playlist"
-
+            if songs_in_playlist.rowcount > 0:
+                return "Song is already in playlist"
+            
             #add entry to playlist_songs
             insert_query = sqlalchemy.insert(playlist_songs).values(playlist_id=playlist_id, song_id=song_id)
             connection.execute(insert_query)
