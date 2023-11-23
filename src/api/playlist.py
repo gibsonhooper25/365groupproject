@@ -5,6 +5,7 @@ from src import database as db
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy import *
 from pydantic import BaseModel
+from .user import log_in
 
 
 router = APIRouter(
@@ -67,7 +68,7 @@ def create_personal_playlist(playlist_info: NewPlaylist):
             if not user_id_query_result:
                 return "No listener exists for the given username"
             password = user_id_query_result.password
-            if password != playlist_info.password:
+            if log_in(playlist_info.username, playlist_info.password) != "ok":
                 return "Incorrect password"
             insert_query = sqlalchemy.insert(playlists).values(creator_id=user_id_query_result.id, title=playlist_info.playlist_name, mood=playlist_info.mood).returning(playlists.c.id)
             new_playlist_id = connection.execute(insert_query).first().id

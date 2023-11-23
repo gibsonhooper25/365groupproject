@@ -61,17 +61,27 @@ def album_exists(album_id, connection):
 
 @router.post("/{album_id}/add-song/{song_id}")
 def add_song_to_album(album_id: int, song_id: int):
-    sql_to_execute = """UPDATE songs SET album_id = :album_id where id = :song_id"""
+    sql_to_execute = """UPDATE songs SET album_id = :album_id 
+    WHERE id = :song_id"""
     try:
         with db.engine.begin() as connection:
-            if album_exists(album_id, connection) and song_exists(song_id, connection):
+            result = connection.execute(sqlalchemy.text("""
+            SELECT songs.id, songs.title AS song_title, albums.title AS album_title
+            FROM songs 
+            JOIN albums ON album_id = albums.id
+            WHERE songs.id = :id
+            """), [{"id" : song_id}])
+            if result.rowcount != 0:
+                titles = result.first()
                 connection.execute(sqlalchemy.text(sql_to_execute),
                 [{"album_id": album_id, "song_id": song_id}])
-                return "ok"  
-            else:
-                return "Given Album Id or Song Id does not exist"
+                return titles.song_title + " added to " + titles.album_title
+            
+            return "Given song id does not exist." 
+    
     except DBAPIError as error: 
         return f"Error returned: <<<{error}>>>"
+
 
 @router.get("/{album_id}")
 def get_songs_from_album(album_id: int):
