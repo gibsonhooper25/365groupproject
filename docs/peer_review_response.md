@@ -1,7 +1,7 @@
 # Changes to Code
 Molly's Suggestions:
-1. Changed Genre Enum in albums.py to import from songs instead of re-defining it
-2. 
+1. Changed Genre Enum and Mood to import from songs instead of re-defining it
+2. Added password encryption using salt
 3. 
 4. 
 5. Added Try block to create_personal_playlist and get_songs_from_album
@@ -16,7 +16,7 @@ Pau's Suggestions:
 1. Added validation functions to check if a given song or album exists
 2. Addressed above
 3. 
-4. 
+4. Changed get_playlist to single query
 5. 
 6. 
 7. 
@@ -24,14 +24,14 @@ Pau's Suggestions:
 9. 
 10. 
 11. 
-12. 
+12. Curated playlists are supposed to give a randomized selection of songs with the given mood so the randomization is necessary here
 Artin's Suggestions:
 1. 
 2. 
 3. 
 4. 
-5. 
-6. 
+5. Changed to only query from mood_songs
+6. The playlist will not be overwritten bacuase this is only an insert not an update. The user would then have access to both the original and new playlist with the same name and could differentiate the two by their id.
 7. 
 8. 
 9. 
@@ -48,7 +48,7 @@ Dillon's Suggestions:
 7. 
 8. 
 9. 
-10. 
+10. Addressed above
 11. 
 12. 
 # Changes to Schema

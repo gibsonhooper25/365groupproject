@@ -23,8 +23,7 @@ users = sqlalchemy.Table("users", metadata_obj, autoload_with=db.engine)
 @router.post("/new/curated")
 def create_curated_playlist(user_id: int, title: str, mood: song.Mood, length: int):
     sql_to_execute = """
-    SELECT songs.id FROM songs
-    JOIN mood_songs ON songs.id = mood_songs.song
+    SELECT mood_songs.song as id FROM mood_songs
     WHERE mood = :mood
     ORDER BY RANDOM()
     LIMIT :length 
@@ -157,27 +156,24 @@ def delete_song_from_playlist(playlist_id: int, song_id: int):
 
 @router.get("/{playlist_id}")
 def get_playlist(playlist_id: int):
+    sql_to_execute = """
+    SELECT title, genre, duration
+    FROM songs
+    JOIN playlist_songs ON playlist_songs.song_id = songs.id
+    WHERE playlist_songs.playlist_id = :playlist_id
+    """
     try:
         with db.engine.begin() as connection:
-            playlist_query = sqlalchemy.select(playlists.c.id, playlists.c.creator_id, playlists.c.title,
-                                               playlists.c.mood).where(playlists.c.id == playlist_id)
-            playlist = connection.execute(playlist_query).first()
-            if not playlist:
-                return "No playlist exists for the given playlist ID"
-            song_query = sqlalchemy.select(songs.c.title, songs.c.genre, songs.c.duration).join(playlist_songs,
-                                                                                                songs.c.id == playlist_songs.c.song_id).where(
-                playlist_songs.c.playlist_id == playlist_id)
-            songs_info = connection.execute(song_query)
+            playlist = connection.execute(sqlalchemy.text(sql_to_execute), [{"playlist_id": playlist_id}])
             song_list = []
-            for song in songs_info:
+            for song in playlist:
                 song_list.append({
                     "title": song.title,
                     "genre": song.genre,
                     "duration_seconds": song.duration
                 })
-            return {
-                "Name": playlist.title,
-                "Songs": song_list
-            }
+            if not song_list:
+                return "No playlist exists for the given playlist ID"
+            return song_list
     except DBAPIError as error:
         print(f"Error returned: <<<{error}>>>")
