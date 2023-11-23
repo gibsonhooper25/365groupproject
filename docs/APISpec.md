@@ -190,16 +190,13 @@ Returns:
 ### 3.1 Get Playlist - `/playlist/{playlist_id}` - GET
 Returns the playlist with the given playlist_id.
 ```commandline
-{
-    name: <string>,
-    songs: [
-        {
-            title: <string>,
-            genre: <genre>,
-            duration_seconds: <int>
-        }
-    ]
-}
+[
+    {
+        title: <string>,
+        genre: <genre>,
+        duration_seconds: <int>
+    }
+]
 ```
 ### 3.2 Create Curated Playlist - `/playlist/new/curated` - PUT
 Generates a list of songs from the given parameters and saves it to the backend.
