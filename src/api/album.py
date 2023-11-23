@@ -65,18 +65,21 @@ def add_song_to_album(album_id: int, song_id: int):
     WHERE id = :song_id"""
     try:
         with db.engine.begin() as connection:
+            #check to see if album exists
+            album = connection.execute(sqlalchemy.text("""
+            SELECT title FROM albums WHERE id = :album_id
+            """), [{"album_id": album_id}])
+            if album.rowcount == 0:
+                return "Given album id does not exist."
             result = connection.execute(sqlalchemy.text("""
-            SELECT songs.id, songs.title AS song_title, albums.title AS album_title
+            SELECT id, title
             FROM songs 
-            JOIN albums ON album_id = albums.id
             WHERE songs.id = :id
             """), [{"id" : song_id}])
             if result.rowcount != 0:
-                titles = result.first()
                 connection.execute(sqlalchemy.text(sql_to_execute),
                 [{"album_id": album_id, "song_id": song_id}])
-                return titles.song_title + " added to " + titles.album_title
-            
+                return result.first().title + " added to " + album.first().title
             return "Given song id does not exist." 
     
     except DBAPIError as error: 

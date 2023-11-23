@@ -21,13 +21,15 @@ def add_user(email: str, password: str, name:str, user_type: user_role, username
     try:
         with db.engine.begin() as connection:
             result = connection.execute(sqlalchemy.text(
+            #check to see if the email already exists
                """
                 SELECT email FROM users WHERE email = :email
                """
-            ), [{"email": email}]) 
+            ), [{"email": email.lower()}]) 
             if result.rowcount != 0:
                return "Account with given email already exists."
             
+            #check to see if the username already exists
             result = connection.execute(sqlalchemy.text(
                """
                 SELECT username FROM users WHERE username = :username
@@ -36,6 +38,7 @@ def add_user(email: str, password: str, name:str, user_type: user_role, username
             if result.rowcount != 0:
                 return "Account with given username already exists."
             
+            #encrypt the password, and then insert user into the database
             connection.execute(sqlalchemy.text(
                 """
                 WITH salt AS (SELECT gen_salt('md5') AS salt)
@@ -43,7 +46,7 @@ def add_user(email: str, password: str, name:str, user_type: user_role, username
                 VALUES (:email, crypt(:password, (SELECT salt FROM salt)), (SELECT salt FROM salt), 
                 :name, :user_type, :username)
                 """
-            ), [{"email": email, "password": password, "name": name, "user_type": user_type, "username": username}])
+            ), [{"email": email.lower(), "password": password, "name": name, "user_type": user_type, "username": username}])
     except DBAPIError as error:
         return f"Error returned: <<<{error}>>>"
    

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel, conint
+from pydantic import BaseModel, confloat
 from src.api import auth
 import sqlalchemy
 from src import database as db
@@ -109,11 +109,13 @@ def create_new_song(artist_id: int, song: NewSong):
                     "artist_id": artist_id}])
             id = result.first().id
 
+            mood_data = []
             for mood in song.moods:
-                sql_to_execute = """INSERT INTO mood_songs (mood, song)
+                mood_data.append({"mood": mood.value, "song": id})
+            sql_to_execute = """
+                INSERT INTO mood_songs (mood, song)
                 VALUES (:mood, :song)"""
-                connection.execute(sqlalchemy.text(sql_to_execute), 
-                    [{"mood": mood.value, "song": id}])
+            connection.execute(sqlalchemy.text(sql_to_execute), mood_data)
 
     except DBAPIError as error:
         return f"Error returned: <<<{error}>>>"
@@ -130,7 +132,7 @@ class FeedbackType(str, Enum):
     overall = "overall"
 
 class Feedback(BaseModel):
-    rating: conint(ge=1, le=5)
+    rating: confloat(ge=1.0, le=5.0)
     feedback_category: FeedbackType
     user: int
 
