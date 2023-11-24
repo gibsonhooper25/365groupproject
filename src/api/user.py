@@ -39,18 +39,18 @@ def add_user(email: str, password: str, name:str, user_type: user_role, username
                 return "Account with given username already exists."
             
             #encrypt the password, and then insert user into the database
-            connection.execute(sqlalchemy.text(
+            id = connection.execute(sqlalchemy.text(
                 """
                 WITH salt AS (SELECT gen_salt('md5') AS salt)
                 INSERT INTO users (email, password, salt, name, user_type, username)
                 VALUES (:email, crypt(:password, (SELECT salt FROM salt)), (SELECT salt FROM salt), 
                 :name, :user_type, :username)
+                RETURNING id
                 """
-            ), [{"email": email.lower(), "password": password, "name": name, "user_type": user_type, "username": username}])
+            ), [{"email": email.lower(), "password": password, "name": name, "user_type": user_type, "username": username}]).scalar_one()
+            return {"user_id": id}
     except DBAPIError as error:
         return f"Error returned: <<<{error}>>>"
-   
-    return "Account successfully created."
 
 
 @router.post("/login")

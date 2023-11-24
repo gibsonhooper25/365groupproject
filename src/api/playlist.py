@@ -46,7 +46,7 @@ def create_curated_playlist(user_id: int, title: str, mood: song.Mood, length: i
                 """
                 connection.execute(sqlalchemy.text(sql_to_execute), 
                     [{"playlist_id": id, "song_id": row.id}])
-            return {"Playlist": id}
+            return {"playlist": id}
 
     except DBAPIError as error:
         return f"Error returned: <<<{error}>>>"
@@ -71,7 +71,7 @@ def create_personal_playlist(playlist_info: NewPlaylist):
                 return "Incorrect password"
             insert_query = sqlalchemy.insert(playlists).values(creator_id=user_id_query_result.id, title=playlist_info.playlist_name, mood=playlist_info.mood).returning(playlists.c.id)
             new_playlist_id = connection.execute(insert_query).first().id
-        return {"Playlist": new_playlist_id}
+        return {"playlist": new_playlist_id}
     except DBAPIError as error:
         print(f"Error returned: <<<{error}>>>")
 

@@ -7,11 +7,11 @@ Returns:
 ```commandline
 [
     {
-        Title: <string>,
-        Artist: <string>,
-        Album: <string>,
-        Genre: <genre>,
-        Duration: <int>
+        title: <string>,
+        artist: <string>,
+        album: <string>,
+        genre: <genre>,
+        duration: <int>
     }
 ]
 ```
@@ -213,7 +213,7 @@ Input:
 Returns:
 ```commandline
 {
-    Playlist: <playlist id>
+    playlist: <playlist id>
 }
 ```
 ### 3.3 Create Personal Playlist - `/playlist/new/personal` - POST
@@ -232,7 +232,7 @@ Input:
 Returns:
 ```commandline
 {
-    Playlist: <playlist id>
+    playlist: <playlist id>
 }
 ```
 ### 3.4 Update Playlist - `/playlist/{playlist_id}/add-song/{song_id}` or `/playlist/{playlist_id}/add-songs/{album_id}` - POST
@@ -252,7 +252,7 @@ Returns:
 "Removed song from playlist"
 ```
 
-## 4. Admins
+## 4. Users
 
 ### 3.1 Create User - `/users` - POST
 Creates a new user if not already in the database.
@@ -263,14 +263,15 @@ Input:
     name: <string>,
     email: <string>,
     username: <string>,
-    password: <string>
+    password: <string>,
+    user_type: <user_role enum>
 
 }
 ```
 Returns:
 ```commandline
 {
-    success: <boolean>
+    "user_id": <int>
 }
 ```
 ### 3.2 Delete User - `/users/{user_id}` - DELETE

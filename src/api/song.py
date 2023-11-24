@@ -60,11 +60,11 @@ def get_all_songs():
             result = connection.execute(sqlalchemy.text(sql))
             for row in result:
                 return_list.append({
-                    "Title": row.title,
-                    "Artist": row.name,
-                    "Album": row.album,
-                    "Genre": row.genre,
-                    "Duration":row.duration,
+                    "title": row.title,
+                    "artist": row.name,
+                    "album": row.album,
+                    "genre": row.genre,
+                    "duration":row.duration,
 
                 })
 
