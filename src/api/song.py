@@ -50,6 +50,7 @@ class NewSong(BaseModel):
     duration: int
     release_date: date
 
+#returns list of all songs. Pagination works given lower bound and upper bound of songs which are sorted in order of title
 @router.get("/")
 def get_all_songs(lower_bound: int, upper_bound: int):
     sql = """SELECT songs.id, songs.title, songs.genre, duration, songs.release_date, users.name,
@@ -134,6 +135,7 @@ def create_new_song(artist_id: int, song: NewSong):
 
     return {"song_id": id}
 
+#associates enumerated mood with an existing song. Shows error message if song does not exist
 @router.post("/new/{song_id}/moods")
 def add_mood_to_song(song_id: int, mood: Mood):
     try:
@@ -141,9 +143,12 @@ def add_mood_to_song(song_id: int, mood: Mood):
             sql_to_execute = """
                 INSERT INTO mood_songs (mood, song)
                 VALUES (:mood, :song)"""
-            connection.execute(sqlalchemy.text(sql_to_execute), 
-                [{"mood": mood, "song": song_id}])
-            return "Mood: "+ mood + " added to " + song_title(song_id, connection)
+            title = song_title(song_id, connection)
+            if title:
+                connection.execute(sqlalchemy.text(sql_to_execute),
+                    [{"mood": mood, "song": song_id}])
+                return "Mood: "+ mood + " added to " + title
+            return "Song with given song id does not exist"
     except DBAPIError as error:
         return f"Error returned: <<<{error}>>>"
  
@@ -162,6 +167,7 @@ class Feedback(BaseModel):
     feedback_category: FeedbackType
     user: int
 
+#helper function to determine if song with given song_id exists
 def song_title(song_id, connection):
     sql_to_execute = """SELECT * from songs WHERE id = :song_id"""
     song = connection.execute(sqlalchemy.text(sql_to_execute),
@@ -171,6 +177,7 @@ def song_title(song_id, connection):
     else:
         return False
 
+#associates feedback information with a given song. Error if song does not exist
 @router.post("/{song_id}/rate")
 def rate_song(song_id: int, feedback: Feedback):
     sql = """INSERT INTO feedback (rating, feedback_type, user_id, song_id) VALUES (:r, :f, :u, :s)"""
@@ -187,6 +194,7 @@ def rate_song(song_id: int, feedback: Feedback):
     except DBAPIError as error:
         return f"Error returned: <<<{error}>>>"
 
+#returns the average feedback rating for a given song, if the song exists and has ratings
 @router.get("/{song_id}/reviews")
 def get_reviews_by_song(song_id: int):
     sql = """SELECT COUNT(*) AS total_reviews, SUM(rating) AS total_rating FROM feedback WHERE song_id = :song_id"""

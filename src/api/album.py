@@ -25,6 +25,7 @@ class NewAlbum(BaseModel):
     genre: Genre
     release_date: date
 
+#creates empty album with a given name, genre, and release date. user submitting request must be either artist or listener_and_artist
 @router.post("/new")
 def create_album(new_album: NewAlbum):
     try:
@@ -53,6 +54,7 @@ def create_album(new_album: NewAlbum):
     except DBAPIError as error:
         print(f"Error returned: <<<{error}>>>")
 
+#returns album title of a given album id, used to verify that album exists
 def album_title(album_id, connection):
     sql_to_execute = """SELECT title from albums WHERE id = :album_id"""
     album = connection.execute(sqlalchemy.text(sql_to_execute),
@@ -62,6 +64,7 @@ def album_title(album_id, connection):
     else:
         return False
 
+#adds song with given song id to album with given album_id. fails if either id does not correspond to an existing record
 @router.post("/{album_id}/add-song/{song_id}")
 def add_song_to_album(album_id: int, song_id: int):
     sql_to_execute = """UPDATE songs SET album_id = :album_id 
@@ -84,6 +87,7 @@ def add_song_to_album(album_id: int, song_id: int):
         return f"Error returned: <<<{error}>>>"
 
 
+#returns list of songs on the album with given album id. returns empty list if album is empty, returns error message if album does not exist
 @router.get("/{album_id}")
 def get_songs_from_album(album_id: int):
     try:
@@ -94,21 +98,25 @@ def get_songs_from_album(album_id: int):
         """
         return_list = []
         with db.engine.begin() as connection:
-            result = connection.execute(sqlalchemy.text(sql_to_execute),
-            [{"album_id": album_id}])
+            if album_title(album_id, connection):
+                result = connection.execute(sqlalchemy.text(sql_to_execute),
+                [{"album_id": album_id}])
 
-            for row in result:
-                return_list.append({
-                    "title": row.title,
-                    "genre": row.genre,
-                    "duration": row.duration,
-                    "release_date": row.release_date
-                })
+                for row in result:
+                    return_list.append({
+                        "title": row.title,
+                        "genre": row.genre,
+                        "duration": row.duration,
+                        "release_date": row.release_date
+                    })
+            else:
+                return "Album with given album_id does not exist"
 
         return return_list
     except DBAPIError as error:
         print(f"Error returned: <<<{error}>>>")
 
+#submit feedback for a given album. See Feedback class for information on feedback. Returns error message if album does not exist, otherwise returns success message
 @router.post("/{album_id}/rate")
 def rate_album(album_id: int, feedback: Feedback):
     sql_to_execute = """INSERT INTO feedback (rating, feedback_type, user_id, album_id) VALUES (:r, :f, :u, :a)"""
@@ -126,6 +134,7 @@ def rate_album(album_id: int, feedback: Feedback):
     except DBAPIError as error:
         return f"Error returned: <<<{error}>>>"
 
+#Returns the average rating for an album from the feedback it received from rate_album(). Returns error message if album has no ratings.
 @router.get("/{album_id}/reviews")
 def get_reviews_by_album(album_id: int):
     sql_to_execute = """SELECT COUNT(*) AS total_reviews, SUM(rating) AS total_rating FROM feedback WHERE album_id = :album_id"""

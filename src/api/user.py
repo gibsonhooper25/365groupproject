@@ -16,6 +16,8 @@ class user_role(str, Enum):
     artist = "artist"
     listener = "listener"
 
+#adds user to database with given information. Checks to make sure email and username do not already exist (these also have unique constraints in the database)
+# uses password encryption and salt, and returns new user id
 @router.post("/")
 def add_user(email: str, password: str, name:str, user_type: user_role, username: str):
     try:
@@ -53,6 +55,7 @@ def add_user(email: str, password: str, name:str, user_type: user_role, username
         return f"Error returned: <<<{error}>>>"
 
 
+#authenticates user with given username and password
 @router.post("/login")
 def log_in(username: str, password: str):
     try:

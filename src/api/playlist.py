@@ -20,6 +20,9 @@ playlist_songs = sqlalchemy.Table("playlist_songs", metadata_obj, autoload_with=
 songs = sqlalchemy.Table("songs", metadata_obj, autoload_with=db.engine)
 users = sqlalchemy.Table("users", metadata_obj, autoload_with=db.engine)
 
+
+#Creates playlist for the user with the given title, mood, and length
+#Finds (length) number of songs randomly from query of all songs with (mood)
 @router.post("/new/curated")
 def create_curated_playlist(user_id: int, title: str, mood: song.Mood, length: int):
     sql_to_execute = """
@@ -58,6 +61,9 @@ class NewPlaylist(BaseModel):
     playlist_name: str
     mood: song.Mood
 
+
+#creates an empty playlist with the given playlist name and mood
+#username and password must be authenticated to create
 @router.post("/new/personal")
 def create_personal_playlist(playlist_info: NewPlaylist):
     try:
@@ -75,6 +81,8 @@ def create_personal_playlist(playlist_info: NewPlaylist):
     except DBAPIError as error:
         print(f"Error returned: <<<{error}>>>")
 
+#adds song with given id to playlist with given id.
+# Shows error message if one or both ids do not correspond to any record. Currently, does not allow same song to be in playlist twice.
 @router.post("/{playlist_id}/add-song/{song_id}")
 def add_song_to_playlist(playlist_id: int, song_id: int):
     try:
@@ -107,6 +115,7 @@ def add_song_to_playlist(playlist_id: int, song_id: int):
     except DBAPIError as error:
         print(f"Error returned: <<<{error}>>>")
 
+#adds all songs from a given album to a playlist with given id. Error message if album does not exist
 @router.post("/{playlist_id}/add-songs/{album_id}")
 def add_album_songs_to_playlist(playlist_id: int, album_id: int):
     sql_to_execute = """
@@ -139,6 +148,7 @@ def add_album_songs_to_playlist(playlist_id: int, album_id: int):
     except DBAPIError as error:
         return f"Error returned: <<<{error}>>>"
 
+#deletes single song from playlist. Shows error message if playlist does not exist or song was not in playlist
 @router.delete("/{playlist_id}/remove-song/{song_id}")
 def delete_song_from_playlist(playlist_id: int, song_id: int):
     try:
