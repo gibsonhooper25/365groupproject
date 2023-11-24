@@ -5,7 +5,7 @@ import sqlalchemy
 from sqlalchemy import *
 from sqlalchemy.exc import DBAPIError
 from src import database as db
-from src.api.song import Genre, Feedback, song_exists
+from src.api.song import Genre, Feedback, song_title
 
 router = APIRouter(
     prefix="/albums",
@@ -50,12 +50,12 @@ def create_album(new_album: NewAlbum):
     except DBAPIError as error:
         print(f"Error returned: <<<{error}>>>")
 
-def album_exists(album_id, connection):
-    sql_to_execute = """SELECT * from albums WHERE id = :album_id"""
-    exists = connection.execute(sqlalchemy.text(sql_to_execute),
+def album_title(album_id, connection):
+    sql_to_execute = """SELECT title from albums WHERE id = :album_id"""
+    album = connection.execute(sqlalchemy.text(sql_to_execute),
                                 [{"album_id": album_id}]).fetchone()
-    if exists:
-        return True
+    if album:
+        return album.title
     else:
         return False
 
@@ -65,21 +65,16 @@ def add_song_to_album(album_id: int, song_id: int):
     WHERE id = :song_id"""
     try:
         with db.engine.begin() as connection:
-            #check to see if album exists
-            album = connection.execute(sqlalchemy.text("""
-            SELECT title FROM albums WHERE id = :album_id
-            """), [{"album_id": album_id}])
-            if album.rowcount == 0:
+            # Check to see if album exists
+            album = album_title(album_id, connection)
+            if not album:
                 return "Given album id does not exist."
-            result = connection.execute(sqlalchemy.text("""
-            SELECT id, title
-            FROM songs 
-            WHERE songs.id = :id
-            """), [{"id" : song_id}])
-            if result.rowcount != 0:
+            # Check to see if song exists
+            song = song_title(song_id, connection)
+            if song:
                 connection.execute(sqlalchemy.text(sql_to_execute),
                 [{"album_id": album_id, "song_id": song_id}])
-                return result.first().title + " added to " + album.first().title
+                return "Added '" + song + "' to '" + album + "'"
             return "Given song id does not exist." 
     
     except DBAPIError as error: 
@@ -115,15 +110,12 @@ def rate_album(album_id: int, feedback: Feedback):
     sql_to_execute = """INSERT INTO feedback (rating, feedback_type, user_id, album_id) VALUES (:r, :f, :u, :a)"""
     try:
         with db.engine.begin() as connection:
-            result = connection.execute(sqlalchemy.text(
-                """
-                SELECT title FROM albums WHERE id = :album_id
-                """), [{"album_id": album_id}])
-            if result.rowcount != 0:
+            album = album_title(album_id, connection)
+            if album:
                 connection.execute(sqlalchemy.text(sql_to_execute),
                 [{"r": feedback.rating, "f": feedback.feedback_category, "u":feedback.user, "a": album_id}])
                 
-                return "You gave " +result.first().title + " a " + str(feedback.rating) + \
+                return "You gave '" + album + "' a " + str(feedback.rating) + \
                 " for category: " + feedback.feedback_category + ". Thank you for your feedback"
             else:
                 return "Given Album Id does not exist"

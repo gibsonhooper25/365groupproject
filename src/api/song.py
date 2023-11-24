@@ -136,12 +136,12 @@ class Feedback(BaseModel):
     feedback_category: FeedbackType
     user: int
 
-def song_exists(song_id, connection):
+def song_title(song_id, connection):
     sql_to_execute = """SELECT * from songs WHERE id = :song_id"""
-    exists = connection.execute(sqlalchemy.text(sql_to_execute),
+    song = connection.execute(sqlalchemy.text(sql_to_execute),
                                 [{"song_id": song_id}]).fetchone()
-    if exists:
-        return True
+    if song:
+        return song.title
     else:
         return False
 
@@ -150,14 +150,11 @@ def rate_song(song_id: int, feedback: Feedback):
     sql = """INSERT INTO feedback (rating, feedback_type, user_id, song_id) VALUES (:r, :f, :u, :s)"""
     try:
         with db.engine.begin() as connection:
-            result = connection.execute(sqlalchemy.text(
-                """
-                SELECT title FROM songs WHERE id = :song_id
-                """), [{"song_id": song_id}])
-            if result.rowcount != 0:
+            song = song_title(song_id, connection)
+            if song:
                 connection.execute(sqlalchemy.text(sql),
                                             [{"r": feedback.rating, "f": feedback.feedback_category, "u":feedback.user, "s": song_id}])
-                return "You gave " +result.first().title + " a " + str(feedback.rating) + \
+                return "You gave '" + song + "' a " + str(feedback.rating) + \
                 " for category: " + feedback.feedback_category + ". Thank you for your feedback"
             else:
                 return "Given Song Id does not exist"
