@@ -51,11 +51,14 @@ class NewSong(BaseModel):
     release_date: date
 
 @router.get("/")
-def get_all_songs():
+def get_all_songs(lower_bound: int, upper_bound: int):
     sql = """SELECT songs.id, songs.title, songs.genre, duration, songs.release_date, users.name,
      albums.title AS album FROM songs
     JOIN users ON songs.artist_id = users.id
-    LEFT JOIN albums ON album_id = albums.id"""
+    LEFT JOIN albums ON album_id = albums.id
+    ORDER BY songs.title ASC"""
+    if upper_bound < lower_bound:
+        return "Invalid lower and upper bound."
     return_list = []
     try:
         with db.engine.begin() as connection:
@@ -69,10 +72,16 @@ def get_all_songs():
                     "duration":row.duration,
                     "release_date": row.release_date
                 })
+        if lower_bound > len(return_list):
+            return "End of song list reached."
+        if upper_bound > len(return_list):
+            upper_bound = len(return_list)
+        if lower_bound < 0:
+            lower_bound = 0
 
     except DBAPIError as error:
         return f"Error returned: <<<{error}>>>"
-    return return_list
+    return return_list[lower_bound:upper_bound]
 
 @router.get("/{song_id}")
 def get_song(song_id: int):
