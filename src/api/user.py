@@ -55,9 +55,13 @@ def add_user(email: str, password: str, name:str, user_type: user_role, username
         return f"Error returned: <<<{error}>>>"
 
 
+class LogIn(BaseModel):
+    username: str
+    password: str
+
 #authenticates user with given username and password
 @router.post("/login")
-def log_in(username: str, password: str):
+def log_in(credentials : LogIn):
     try:
         with db.engine.begin() as connection:
             result = connection.execute(sqlalchemy.text(
@@ -65,7 +69,7 @@ def log_in(username: str, password: str):
                     SELECT password, salt FROM users
                     WHERE username = :username
                 """
-            ),[{"username": username}])
+            ),[{"username": credentials.username}])
             if result.rowcount == 0:
                 return "Invalid username"
             result = result.first()
@@ -74,7 +78,7 @@ def log_in(username: str, password: str):
                 """
                     SELECT crypt(:password, :salt) AS attempted_password
                 """
-            ),[{"password": password, "salt": result.salt}])
+            ),[{"password": credentials.password, "salt": result.salt}])
             attempt = attempt.first()
             if attempt.attempted_password == result.password:
                 return "ok"
