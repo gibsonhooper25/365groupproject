@@ -125,6 +125,20 @@ def create_new_song(artist_id: int, song: NewSong):
 
     return {"song_id": id}
 
+@router.post("/new/{song_id}/moods")
+def add_mood_to_song(song_id: int, mood: Mood):
+    try:
+        with db.engine.begin() as connection:
+            sql_to_execute = """
+                INSERT INTO mood_songs (mood, song)
+                VALUES (:mood, :song)"""
+            connection.execute(sqlalchemy.text(sql_to_execute), 
+                [{"mood": mood, "song": song_id}])
+            return "Mood: "+ mood + " added to " + song_title(song_id, connection)
+    except DBAPIError as error:
+        return f"Error returned: <<<{error}>>>"
+ 
+    
 
 class FeedbackType(str, Enum):
     quality = "sound quality"
