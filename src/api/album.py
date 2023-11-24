@@ -86,6 +86,32 @@ def add_song_to_album(album_id: int, song_id: int):
     except DBAPIError as error: 
         return f"Error returned: <<<{error}>>>"
 
+@router.delete("/{album_id}/songs/{song_id}")
+def remove_song_from_album(song_id: int):
+    sql_to_execute = """UPDATE songs SET album_id = NULL
+    WHERE id = :song_id"""
+    try:
+        with db.engine.begin() as connection:
+            #Get current album
+            result = connection.execute(sqlalchemy.text("""
+                SELECT album_id FROM songs WHERE id = :song_id
+            """),[{"song_id": song_id}])
+
+            song = song_title(song_id, connection)
+            # Check to see if song exists
+            if song:
+                album_id = result.first().album_id
+                if not album_id:
+                    return "'"+ song + "' not attached to any album."
+                
+                album = album_title(album_id, connection)
+                connection.execute(sqlalchemy.text(sql_to_execute),
+                [{"song_id": song_id}])
+                return "Removed '" + song + "' from '" + album + "'"
+            return "Given song id does not exist." 
+    
+    except DBAPIError as error: 
+        return f"Error returned: <<<{error}>>>"
 
 #returns list of songs on the album with given album id. returns empty list if album is empty, returns error message if album does not exist
 @router.get("/{album_id}")
