@@ -6,6 +6,7 @@ from sqlalchemy import *
 from sqlalchemy.exc import DBAPIError
 from src import database as db
 from src.api.song import Genre, Feedback, song_title
+from datetime import date
 
 router = APIRouter(
     prefix="/albums",
@@ -22,6 +23,7 @@ class NewAlbum(BaseModel):
     user_id: int
     name: str
     genre: Genre
+    release_date: date
 
 @router.post("/new")
 def create_album(new_album: NewAlbum):
@@ -40,6 +42,7 @@ def create_album(new_album: NewAlbum):
                         artist_id=new_album.user_id,
                         title=new_album.name,
                         genre=new_album.genre, 
+                        release_date=new_album.release_date
                 ).returning(albums.c.id)).scalar_one()
             else:
                 raise HTTPException(
@@ -85,7 +88,7 @@ def add_song_to_album(album_id: int, song_id: int):
 def get_songs_from_album(album_id: int):
     try:
         sql_to_execute = """
-            SELECT songs.title, songs.genre, songs.duration 
+            SELECT songs.title, songs.genre, songs.duration, songs.release_date
             FROM songs
             WHERE album_id = :album_id
         """
@@ -98,7 +101,8 @@ def get_songs_from_album(album_id: int):
                 return_list.append({
                     "title": row.title,
                     "genre": row.genre,
-                    "duration": row.duration
+                    "duration": row.duration,
+                    "release_date": row.release_date
                 })
 
         return return_list

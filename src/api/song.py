@@ -5,6 +5,7 @@ import sqlalchemy
 from src import database as db
 from sqlalchemy.exc import DBAPIError
 from enum import Enum
+from datetime import date
 
 
 router = APIRouter(
@@ -47,10 +48,11 @@ class NewSong(BaseModel):
     genre: Genre
     moods: list[Mood]
     duration: int
+    release_date: date
 
 @router.get("/")
 def get_all_songs():
-    sql = """SELECT songs.id, songs.title, songs.genre, duration, users.name,
+    sql = """SELECT songs.id, songs.title, songs.genre, duration, songs.release_date, users.name,
      albums.title AS album FROM songs
     JOIN users ON songs.artist_id = users.id
     LEFT JOIN albums ON album_id = albums.id"""
@@ -65,7 +67,7 @@ def get_all_songs():
                     "album": row.album,
                     "genre": row.genre,
                     "duration":row.duration,
-
+                    "release_date": row.release_date
                 })
 
     except DBAPIError as error:
@@ -75,7 +77,7 @@ def get_all_songs():
 @router.get("/{song_id}")
 def get_song(song_id: int):
     sql_to_execute = """
-        SELECT songs.title as song, songs.genre, songs.duration, albums.title as album, users.name as artist
+        SELECT songs.title as song, songs.genre, songs.duration, songs.release_date, albums.title as album, users.name as artist
         FROM songs
         JOIN users ON users.id = songs.artist_id
         LEFT JOIN albums ON albums.id = songs.album_id 
@@ -93,20 +95,21 @@ def get_song(song_id: int):
                 "genre": song.genre,
                 "duration": song.duration,
                 "album": song.album,
-                "artist": song.artist
+                "artist": song.artist,
+                "release_date": song.release_date
             }
     except DBAPIError as error:
         return f"Error returned: <<<{error}>>>"
 
 @router.post("/new")
 def create_new_song(artist_id: int, song: NewSong):
-    sql_to_execute = """INSERT INTO songs (title, genre, duration, artist_id)
-    VALUES (:title, :genre, :duration, :artist_id) RETURNING id"""
+    sql_to_execute = """INSERT INTO songs (title, genre, duration, artist_id, release_date)
+    VALUES (:title, :genre, :duration, :artist_id, :release_date) RETURNING id"""
     try:
         with db.engine.begin() as connection:
             result = connection.execute(sqlalchemy.text(sql_to_execute), 
                 [{"title": song.title, "genre": song.genre, "duration": song.duration,
-                    "artist_id": artist_id}])
+                    "artist_id": artist_id, "release_date": song.release_date}])
             id = result.first().id
 
             mood_data = []
