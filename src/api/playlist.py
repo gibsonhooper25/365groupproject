@@ -5,20 +5,13 @@ from src import database as db
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy import *
 from pydantic import BaseModel
-from .user import log_in
-
+from .user import log_in, LogIn
 
 router = APIRouter(
     prefix="/playlists",
     tags=["playlists"],
     dependencies=[Depends(auth.get_api_key)],
 )
-
-metadata_obj = sqlalchemy.MetaData()
-playlists = sqlalchemy.Table("playlists", metadata_obj, autoload_with=db.engine)
-playlist_songs = sqlalchemy.Table("playlist_songs", metadata_obj, autoload_with=db.engine)
-songs = sqlalchemy.Table("songs", metadata_obj, autoload_with=db.engine)
-users = sqlalchemy.Table("users", metadata_obj, autoload_with=db.engine)
 
 
 #Creates playlist for the user with the given title, mood, and length
@@ -68,15 +61,15 @@ class NewPlaylist(BaseModel):
 def create_personal_playlist(playlist_info: NewPlaylist):
     try:
         with db.engine.begin() as connection:
-            user_id_query = sqlalchemy.select(users.c.id, users.c.password).where((users.c.username == playlist_info.username) & (users.c.user_type != 'artist'))
-            user_id_query_result = connection.execute(user_id_query).first()
+            user_id_query = "SELECT id, password FROM users WHERE username = :given_uname AND user_type != 'artist'"
+            user_id_query_result = connection.execute(sqlalchemy.text(user_id_query), [{"given_uname": playlist_info.username}]).first()
             if not user_id_query_result:
                 return "No listener exists for the given username"
-            password = user_id_query_result.password
-            if log_in(playlist_info.username, playlist_info.password) != "ok":
+            credentials = LogIn(username=playlist_info.username, password=playlist_info.password)
+            if log_in(credentials) != "ok":
                 return "Incorrect password"
-            insert_query = sqlalchemy.insert(playlists).values(creator_id=user_id_query_result.id, title=playlist_info.playlist_name, mood=playlist_info.mood).returning(playlists.c.id)
-            new_playlist_id = connection.execute(insert_query).first().id
+            insert_query = "INSERT INTO playlists (creator_id, title, mood) VALUES (:cid, :title, :mood) RETURNING id"
+            new_playlist_id = connection.execute(sqlalchemy.text(insert_query), [{"cid": user_id_query_result.id, "title": playlist_info.playlist_name, "mood": playlist_info.mood}]).scalar()
         return {"playlist": new_playlist_id}
     except DBAPIError as error:
         print(f"Error returned: <<<{error}>>>")
@@ -88,29 +81,20 @@ def add_song_to_playlist(playlist_id: int, song_id: int):
     try:
         with db.engine.begin() as connection:
             #check if the playlist exists, return if it doesn't
-            playlist_query = sqlalchemy.select(playlists.c.id).where(playlists.c.id == playlist_id)
-            pid = connection.execute(playlist_query).first()
+            playlist_query = "SELECT id FROM playlists WHERE id = :pid"
+            pid = connection.execute(sqlalchemy.text(playlist_query), [{"pid": playlist_id}]).first()
             if not pid:
                 return "No playlist exists for the given playlist ID"
 
             #check if the song exists, return if it doesn't
-            song_query = sqlalchemy.select(songs.c.id).where(songs.c.id == song_id)
-            sid = connection.execute(song_query).first()
+            song_query = "SELECT id FROM songs WHERE id = :sid"
+            sid = connection.execute(sqlalchemy.text(song_query), [{"sid": song_id}]).first()
             if not sid:
                 return "No song exists for the given song ID"
-
-            #check if the song is already in the playlist, return if it is
-            playlist_song_query = sqlalchemy.select(playlist_songs.c.song_id).where(
-                sqlalchemy.and_(playlist_songs.c.playlist_id == playlist_id, 
-                                playlist_songs.c.song_id == song_id)
-            )
-            songs_in_playlist = connection.execute(playlist_song_query)
-            if songs_in_playlist.rowcount > 0:
-                return "Song is already in playlist"
             
             #add entry to playlist_songs
-            insert_query = sqlalchemy.insert(playlist_songs).values(playlist_id=playlist_id, song_id=song_id)
-            connection.execute(insert_query)
+            insert_query = "INSERT INTO playlist_songs (playlist_id, song_id) VALUES (:pid, :sid)"
+            connection.execute(sqlalchemy.text(insert_query), [{"pid": playlist_id, "sid": song_id}])
             return "Song added to playlist"
     except DBAPIError as error:
         print(f"Error returned: <<<{error}>>>")

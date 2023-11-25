@@ -14,10 +14,6 @@ router = APIRouter(
     dependencies=[Depends(auth.get_api_key)],
 )
 
-# Use reflection to derive table schema.
-metadata_obj = sqlalchemy.MetaData()
-albums = sqlalchemy.Table("albums", metadata_obj, autoload_with=db.engine)
-users = sqlalchemy.Table("users", metadata_obj, autoload_with=db.engine)
 
 class NewAlbum(BaseModel):
     user_id: int
