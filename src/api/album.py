@@ -30,21 +30,12 @@ class NewAlbum(BaseModel):
 def create_album(new_album: NewAlbum):
     try:
         with db.engine.begin() as conn:
-            exists_criteria = (
-                select(users.c.id).
-                where((users.c.id == new_album.user_id) & (users.c.user_type != 'listener')).
-                exists()
-            )
-            artist_exists = conn.execute(select(users.c.id).where(exists_criteria)).scalar()
+            exists_criteria = "SELECT id FROM users WHERE id = :given_id AND user_type != 'listener'"
+            artist_exists = conn.execute(sqlalchemy.text(exists_criteria), [{"given_id": new_album.user_id}]).scalar()
 
             if artist_exists:
-                new_id = conn.execute(
-                sqlalchemy.insert(albums).values(
-                        artist_id=new_album.user_id,
-                        title=new_album.name,
-                        genre=new_album.genre, 
-                        release_date=new_album.release_date
-                ).returning(albums.c.id)).scalar_one()
+                insert_query = "INSERT INTO albums (artist_id, title, genre, release_date) VALUES (:id, :name, :genre, :date) RETURNING id"
+                new_id = conn.execute(sqlalchemy.text(insert_query), [{"id": new_album.user_id, "name": new_album.name, "genre": new_album.genre, "date": new_album.release_date}]).scalar()
             else:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST, 
