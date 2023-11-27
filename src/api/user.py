@@ -67,7 +67,7 @@ def log_in(credentials : LogIn):
         with db.engine.begin() as connection:
             result = connection.execute(sqlalchemy.text(
                 """
-                    SELECT password, salt FROM users
+                    SELECT password, salt, id AS user_id FROM users
                     WHERE username = :username
                 """
             ),[{"username": credentials.username}])
@@ -82,7 +82,7 @@ def log_in(credentials : LogIn):
             ),[{"password": credentials.password, "salt": result.salt}])
             attempt = attempt.first()
             if attempt.attempted_password == result.password:
-                return "ok"
+                return result.user_id
             else:
                 return "incorrect password"
           

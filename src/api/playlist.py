@@ -6,6 +6,7 @@ from sqlalchemy.exc import DBAPIError
 from sqlalchemy import *
 from pydantic import BaseModel
 from .user import log_in, LogIn
+from src.api.song import Genre, FeedbackType
 
 router = APIRouter(
     prefix="/playlists",
@@ -54,6 +55,53 @@ class NewPlaylist(BaseModel):
     playlist_name: str
     mood: song.Mood
 
+#Creates a playlist with random songs based on the given desired duration, list of acceptable genres, one specific mood, and feedback type.
+#Selects songs with these conditions where the average rating for that feedback type is greater than or equal to 4. Songs will have a total duration of no more than 3 minutes longer than the desired duration.
+#Adds these songs to a new playlist and returns the playlist id.
+@router.post("/new/advanced")
+def create_curated_playlist_advanced(playlist_info: NewPlaylist, acceptable_genres: list[Genre], target_minutes: int, attribute: FeedbackType = FeedbackType.overall):
+    credentials = LogIn(username=playlist_info.username, password=playlist_info.password)
+    user_id = log_in(credentials)
+    if type(user_id) != int:
+        return "Incorrect credentials"
+    error_margin_seconds = 180
+    target_seconds = target_minutes * 60
+    max_seconds = target_seconds + error_margin_seconds
+    filtered_songs_query = """SELECT songs.id, title, genre, duration, mood, ROUND(AVG(rating::numeric), 2) as avg_rating, feedback_type FROM songs 
+                              LEFT JOIN mood_songs ON mood_songs.song = songs.id LEFT JOIN feedback ON feedback.song_id = songs.id
+                              WHERE MOOD = :m AND genre::TEXT = ANY(:genres) AND feedback_type::TEXT = :attr
+                              GROUP BY songs.id, mood, feedback_type HAVING ROUND(AVG(rating::numeric), 2) >= 4
+                              ORDER BY songs.id"""
+
+    with db.engine.begin() as connection:
+        filtered_songs = connection.execute(sqlalchemy.text(filtered_songs_query), [{"m": playlist_info.mood, "genres": acceptable_genres, "attr": attribute}])
+        if filtered_songs.rowcount == 0:
+            return "No songs were found that satisfy your request parameters."
+        songs_in_playlist = []
+        index = 0
+        playlist_seconds = 0
+        for song_to_add in filtered_songs:
+            if song_to_add.duration + playlist_seconds > max_seconds:
+                break
+            songs_in_playlist.append(song_to_add.id)
+            index += 1
+            playlist_seconds += song_to_add.duration
+
+
+        get_pid = connection.execute(sqlalchemy.text("""
+            INSERT INTO playlists (creator_id, title, mood)
+             VALUES (:user_id, :title, :mood)
+            RETURNING id
+        """), [{"user_id": user_id, "title": playlist_info.playlist_name, "mood": playlist_info.mood}])
+        new_pid = get_pid.first().id
+        for s_id in songs_in_playlist:
+            sql_to_execute = """
+                INSERT INTO playlist_songs (playlist_id, song_id)
+                VALUES (:p, :s)
+            """
+            connection.execute(sqlalchemy.text(sql_to_execute),
+                               [{"p": new_pid, "s": s_id}])
+    return {"playlist_id": new_pid}
 
 #creates an empty playlist with the given playlist name and mood
 #username and password must be authenticated to create
@@ -61,15 +109,12 @@ class NewPlaylist(BaseModel):
 def create_personal_playlist(playlist_info: NewPlaylist):
     try:
         with db.engine.begin() as connection:
-            user_id_query = "SELECT id, password FROM users WHERE username = :given_uname AND user_type != 'artist'"
-            user_id_query_result = connection.execute(sqlalchemy.text(user_id_query), [{"given_uname": playlist_info.username}]).first()
-            if not user_id_query_result:
-                return "No listener exists for the given username"
             credentials = LogIn(username=playlist_info.username, password=playlist_info.password)
-            if log_in(credentials) != "ok":
-                return "Incorrect password"
+            user_id = log_in(credentials)
+            if type(user_id) != int:
+                return "Incorrect credentials"
             insert_query = "INSERT INTO playlists (creator_id, title, mood) VALUES (:cid, :title, :mood) RETURNING id"
-            new_playlist_id = connection.execute(sqlalchemy.text(insert_query), [{"cid": user_id_query_result.id, "title": playlist_info.playlist_name, "mood": playlist_info.mood}]).scalar()
+            new_playlist_id = connection.execute(sqlalchemy.text(insert_query), [{"cid": user_id, "title": playlist_info.playlist_name, "mood": playlist_info.mood}]).scalar()
         return {"playlist": new_playlist_id}
     except DBAPIError as error:
         print(f"Error returned: <<<{error}>>>")

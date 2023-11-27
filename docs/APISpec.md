@@ -252,6 +252,40 @@ Returns:
 "Removed song from playlist"
 ```
 
+### 3.6 Create Advanced Playlist - `playlists/new/advanced` - POST
+Creates a new, pre-filled playlist with songs based on user specifications.
+Users specify desired duration (in minutes), mood, list of acceptable genres, and feedback type.
+Selects songs that fit the given mood and genre with a rating of >= 4.0 in that feedback type, and stays within 3 minutes of the given duration (unless it doesn't find enough songs to reach the target duration)
+
+Request:
+```commandline
+target_minutes: <int>
+attribute: <feedback_type Enum> - default 'overall'
+{
+  "playlist_info": {
+    "username": <string>,
+    "password": <string>,
+    "playlist_name": <string>,
+    "mood": "<mood Enum>
+  },
+  "acceptable_genres": [
+    <genre Enum>, <genre Enum>, ...
+  ]
+}
+```
+Response:
+```commandline
+{"playlist_id": <int>}
+
+or
+
+"Incorrect credentials"
+
+or 
+
+"No songs were found that satisfy your request parameters."
+```
+
 ## 4. Users
 
 ### 4.1 Create User - `/users` - POST
