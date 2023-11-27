@@ -24,7 +24,6 @@ class Preference(BaseModel):
 #them if they are not in user_preferences already
 @router.post("/{user_id}")
 def preference_defaults(user_id: int):
-    #get preference for moods
     try:
         with db.engine.begin() as connection:
             #check to see if user already has preferences set
@@ -51,6 +50,8 @@ def preference_defaults(user_id: int):
                 LIMIT 2
             """
             ), [{"user_id": user_id}]) 
+            if top_moods.rowcount == 0:
+                return "Insufficient data for discovery, please add preferences manually or create a playlist."
             for mood in top_moods:
                 quick_insert(Preference(user_id = user_id, update_type = "mood", update = mood.mood), connection)
                 if result == "Invalid preference":
@@ -69,6 +70,8 @@ def preference_defaults(user_id: int):
                 LIMIT 2
                 """
             ), [{"user_id": user_id}]) 
+            if top_genres.rowcount == 0:
+                return "Insufficient data for discovery, please add preferences manually or create a playlist."
             for genre in top_genres:
                 result = quick_insert(Preference(user_id = user_id, update_type = "genre", update =genre.genre), connection)
                 if result == "Invalid preference":
@@ -106,6 +109,8 @@ def get_preferences(user_id: int):
                     genres.append(row.preference)
                 elif row.preference_type == "mood":
                     moods.append(row.preference)
+            if len(genres) == 0 and len(moods) == 0:
+                return "No preferences set."
         return {"genres": genres, "moods": moods}
     except DBAPIError as error:
         return f"Error returned: <<<{error}>>>"
@@ -145,9 +150,15 @@ def add_preference(update: Preference):
     except DBAPIError as error:
         return f"Error returned: <<<{error}>>>"
 
-#deletes either a genre, mood, or artist from the preferred list
+#deletes either a genre, mood from the preference list
 @router.delete("/preferences/{user_id}")
 def delete_preference(deletion: Preference):
+    if deletion.update_type != "genre" and deletion.update_type != "mood":
+        return "Invalid preference"
+    if deletion.update_type == "mood" and deletion.update not in [mood for mood in Mood]:
+        return "Invalid mood"
+    if deletion.update_type == "genre" and deletion.update not in [genre for genre in Genre]:
+        return "Invalid genre"
     try:
         with db.engine.begin() as connection:
             result = connection.execute(sqlalchemy.text(
