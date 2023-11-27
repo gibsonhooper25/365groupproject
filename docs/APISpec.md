@@ -254,7 +254,7 @@ Returns:
 
 ## 4. Users
 
-### 3.1 Create User - `/users` - POST
+### 4.1 Create User - `/users` - POST
 Creates a new user if not already in the database.
 
 Input:
@@ -274,7 +274,7 @@ Returns:
     "user_id": <int>
 }
 ```
-### 3.2 Delete User - `/users/{user_id}` - DELETE
+### 4.2 Delete User - `/users/{user_id}` - DELETE
 Deletes a user from database.
 
 Returns:
@@ -283,4 +283,151 @@ Returns:
     success: <boolean>
 }
 ```
+## 5. Discovery
 
+### 5.1 Create User Preferences - `/discovery/{user_id}` - POST
+Creates default user preferences if they do not exist yet.
+
+Input:
+```commandline
+{
+    user_id: <int>
+
+}
+```
+Returns:
+```commandline
+"Preferences successfully set."
+```
+### 5.2 Get Preferences - `/discovery/preferences/{user_id}` - GET
+Gets users current preferences
+
+Input:
+```commandline
+{
+    user_id: <int>
+
+}
+```
+Returns:
+```commandline
+{
+    genres: <list>
+    moods: <list>
+}
+```
+
+### 5.3 Add Preferences - `/discovery/preferences/{user_id}` - POST
+Adds a user preference.
+
+Input:
+```commandline
+{
+    user_id: <int>
+    update_type: <preference enum>
+    update: <mood or genre enum>
+}
+```
+Returns:
+```commandline
+"Preference updated"
+```
+### 5.4 Delete Preferences - `/discovery/preferences/{user_id}` - DELETE
+Deletes a user preference.
+
+Input:
+```commandline
+{
+    user_id: <int>
+    update_type: <preference enum>
+    update: <mood or genre enum>
+}
+```
+Returns:
+```commandline
+"Preference updated"
+```
+### 5.5 Discovery Feed - `/discovery/new_releases/{user_id}` - GET
+Provides discovery feed: songs based on mood and genre preferences, new artists based on genre preferences, and new releases from liked artists.
+Input:
+```commandline
+{
+    user_id: <int>
+}
+```
+Returns:
+```commandline
+[
+    "Songs you might enjoy based on current preferences"
+    [
+        {
+            title: <str>
+            artist: <str>
+            genre: <genre enum>
+            duration: <int>
+            release_date: <str>
+        }
+    ]
+    "Some new artists you might enjoy"
+    [
+        artist: <str>
+    ]
+    "New releases from artists you love"
+    [
+        {
+            title: <str>
+            artist: <str>
+            genre: <genre enum>
+            duration: <int>
+            release_date: <str>
+        }
+    ]
+]
+```
+### 5.6 Add Artist to Spotlight - `/discovery/spotlight/add` - PATCH
+Adds an artist to spotlight
+
+Input:
+```commandline
+{
+    user_id: <int>
+    description: <str>
+}
+```
+Returns:
+```commandline
+"Spotlight given to user: user_id"
+```
+### 5.7 Remove Artist From Spotlight - `/discovery/spotlight/remove` - PATCH
+Removes an artist from spotlight
+
+Input:
+```commandline
+{
+    user_id: <int>
+}
+```
+Returns:
+```commandline
+"Spotlight removed from user: user_id"
+```
+### 5.8 Get Spotlight List - `/discovery/spotlight/{user_id}` - GET
+Gets songs that are promoted through the spotlight list which are in lighn with a users genres
+Input:
+```commandline
+{
+    user_id: <int>
+}
+```
+Returns:
+```commandline
+[
+    {
+        title: <str>
+        artist: <str>
+        genre: <genre enum>
+        duration: <int>
+        release_date: <str>
+    }
+]
+```
