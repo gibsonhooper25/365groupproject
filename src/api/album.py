@@ -26,10 +26,7 @@ class NewAlbum(BaseModel):
 def create_album(new_album: NewAlbum):
     try:
         with db.engine.begin() as conn:
-            exists_criteria = "SELECT id FROM users WHERE id = :given_id AND user_type != 'listener'"
-            artist_exists = conn.execute(sqlalchemy.text(exists_criteria), [{"given_id": new_album.user_id}]).scalar()
-
-            if artist_exists:
+            if artist_name(new_album.user_id, conn):
                 insert_query = "INSERT INTO albums (artist_id, title, genre, release_date) VALUES (:id, :name, :genre, :date) RETURNING id"
                 new_id = conn.execute(sqlalchemy.text(insert_query), [{"id": new_album.user_id, "name": new_album.name, "genre": new_album.genre, "date": new_album.release_date}]).scalar()
             else:
@@ -41,6 +38,13 @@ def create_album(new_album: NewAlbum):
     except DBAPIError as error:
         print(f"Error returned: <<<{error}>>>")
 
+def artist_name(artist_id, connection):
+    exists_criteria = "SELECT name FROM users WHERE id = :given_id AND user_type != 'listener'"
+    artist = connection.execute(sqlalchemy.text(exists_criteria), [{"given_id": artist_id}]).first()
+    if artist:
+        return artist.name
+    else:
+        return False
 #returns album title of a given album id, used to verify that album exists
 def album_title(album_id, connection):
     sql_to_execute = """SELECT title from albums WHERE id = :album_id"""
