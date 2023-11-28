@@ -54,4 +54,3 @@
 10. Addressed above
 11. Improved return statements in functions such as rate album and rate song.
 12. Improved error handling by adding queries to check if records exist before doing related updates.
-# Changes to Schema
