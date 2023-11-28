@@ -14,5 +14,6 @@ A phantom read could occur in the get new releases function because it depends o
 
 ## Case 3
 ### Description
-
+A user has a new personal playlist and shares their account with a friend. The two have decided to build this new playlist together, each adding songs they like. A phantom read could occur when the two are adding songs to the playlist at the same time. This could occur if `/playlists/{playlist_id}/add-song/{song_id}` and `/playlist/{playlist_id}/add-songs/{album_id}` happen at the same time with a song_id that is contained in the album. When adding an entire album to a playlist, only songs that don’t already exist in the playlist are added. If `add_album_songs_to_playlist` transaction begins and starts to add all songs in an album because it finds that none of them exists already in the playlist and at the same time `add_song_to_playlist` is called then that song could be added twice to the playlist. Our implementation actually checks for songs and inserts them in a single query to solve unexpected behavior like this.
 ### Diagram
+![img.png](concurrency3.png)
