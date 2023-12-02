@@ -10,7 +10,10 @@ from faker import Faker
 import numpy as np
 import passlib
 
+from src.api.discovery import PreferenceType
+from src.api.song import Genre, ContentType, FeedbackType, Mood
 from src.api.user import user_role
+from src.fake_data_constants import fake_album_names, fake_song_names, fake_comments, fake_playlist_titles
 
 
 def database_connection_url():
@@ -181,6 +184,7 @@ def generate_random_password(length=12):
     password = ''.join(random.choice(characters) for _ in range(length))
     return password
 
+print("Populating users...")
 #populate users
 with engine.begin() as conn:
     num_users = 1376
@@ -219,3 +223,131 @@ with engine.begin() as conn:
         conn.execute(sqlalchemy.text(insert), {"e": email, "p": encrypted_password, "n": name, "ut": user_type, "un": username, "s": salt, "sl": spotlight})
         if i % 100 == 0:
             print("username = " + username + ", password = " + unencrypted_password)
+
+print("Populating albums...")
+#populate albums
+with engine.begin() as conn:
+    num_albums = 12
+    genre_list = [genre.value for genre in Genre]
+    for i in range(num_albums):
+        title = fake_album_names[i]
+        genre = np.random.choice(genre_list)
+        artist = conn.execute(sqlalchemy.text(f"SELECT id FROM users WHERE user_type != '{user_role.listener.value}' ORDER BY RANDOM() LIMIT 1")).scalar()
+        release_date = fake.date_between(start_date='-50y', end_date='today')
+        insert = """INSERT INTO albums (title, genre, artist_id, release_date) VALUES (:t, :g, :aid, :rd)"""
+        conn.execute(sqlalchemy.text(insert), {"t": title, "g": genre, "aid": artist, "rd": release_date})
+
+print("Populating songs...")
+#populate songs
+with engine.begin() as conn:
+    num_songs = 240
+    for i in range(num_songs):
+        title = np.random.choice(fake_song_names)
+        genre = np.random.choice(genre_list)
+        duration = max(np.random.normal(loc=234, scale=66), 10)
+        (album_id, artist_id, album_genre, album_release_date) = conn.execute(sqlalchemy.text("SELECT id, artist_id, genre, release_date FROM albums ORDER BY RANDOM() LIMIT 1")).first()
+        if np.random.choice([True, False], p=[0.9, 0.1]):
+            #single
+            artist = conn.execute(sqlalchemy.text(
+                f"SELECT id FROM users WHERE user_type != '{user_role.listener.value}' ORDER BY RANDOM() LIMIT 1")).scalar()
+            release_date = fake.date_between(start_date='-50y', end_date='today')
+            insert = """INSERT INTO songs (title, genre, duration, artist_id, release_date) VALUES (:t, :g, :d, :aid, :rd)"""
+            conn.execute(sqlalchemy.text(insert), {"t": title, "g": genre, "d": duration, "aid": artist, "rd": release_date})
+        else:
+            #on an album
+            insert = """INSERT INTO songs (title, genre, duration, album_id, artist_id, release_date) VALUES (:t, :g, :d, :alid, :aid, :rd)"""
+            conn.execute(sqlalchemy.text(insert),
+                         {"t": title, "g": album_genre, "d": duration, "alid": album_id, "aid": artist_id, "rd": album_release_date})
+
+content_types = [ct.value for ct in ContentType]
+print("Populating comments...")
+#populate comments
+with engine.begin() as conn:
+    num_comments = 1257
+    for i in range(num_comments):
+        comment = np.random.choice(fake_comments)
+        content_type = np.random.choice(content_types)
+        user = conn.execute(sqlalchemy.text(f"SELECT id FROM users WHERE user_type != '{user_role.artist.value}' ORDER BY RANDOM() LIMIT 1")).scalar()
+        if content_type == 'album':
+            album_id = conn.execute(sqlalchemy.text("SELECT id FROM albums ORDER BY RANDOM() LIMIT 1")).scalar()
+            insert = """INSERT INTO comments (type, comment, user_id, album_id) VALUES (:t, :c, :uid, :aid)"""
+            conn.execute(sqlalchemy.text(insert), {"t": content_type, "c": comment, "uid": user, "aid": album_id})
+        else:
+            song_id = conn.execute(sqlalchemy.text("SELECT id FROM songs ORDER BY RANDOM() LIMIT 1")).scalar()
+            insert = """INSERT INTO comments (type, comment, user_id, song_id) VALUES (:t, :c, :uid, :sid)"""
+            conn.execute(sqlalchemy.text(insert), {"t": content_type, "c": comment, "uid": user, "sid": song_id})
+
+feedback_types = [ft.value for ft in FeedbackType]
+print("Populating feedback...")
+#populate feedback
+with engine.begin() as conn:
+    num_ratings = 25148
+    for i in range(num_ratings):
+        rating = np.random.randint(1, 6)
+        content_type = np.random.choice(content_types)
+        feedback_type = np.random.choice(feedback_types)
+        user = conn.execute(sqlalchemy.text(f"SELECT id FROM users WHERE user_type != '{user_role.artist.value}' ORDER BY RANDOM() LIMIT 1")).scalar()
+        if content_type == 'album':
+            album_id = conn.execute(sqlalchemy.text("SELECT id FROM albums ORDER BY RANDOM() LIMIT 1")).scalar()
+            insert = """INSERT INTO feedback (rating, feedback_type, user_id, album_id) VALUES (:r, :f, :uid, :aid)"""
+            conn.execute(sqlalchemy.text(insert), {"r": rating, "f": feedback_type, "uid": user, "aid": album_id})
+        else:
+            song_id = conn.execute(sqlalchemy.text("SELECT id FROM songs ORDER BY RANDOM() LIMIT 1")).scalar()
+            insert = """INSERT INTO feedback (rating, feedback_type, user_id, song_id) VALUES (:r, :f, :uid, :sid)"""
+            conn.execute(sqlalchemy.text(insert), {"r": rating, "f": feedback_type, "uid": user, "sid": song_id})
+
+
+#populate mood_songs
+print("Populating mood_songs...")
+moods = [m.value for m in Mood]
+used_pairs = []
+with engine.begin() as conn:
+    num_rows = 240
+    while i < num_rows:
+        mood = np.random.choice(moods)
+        song_id = conn.execute(sqlalchemy.text("SELECT id FROM songs ORDER BY RANDOM() LIMIT 1")).scalar()
+        if (mood, song_id) not in used_pairs:
+            insert = """INSERT INTO mood_songs (mood, song) VALUES (:m, :s)"""
+            conn.execute(sqlalchemy.text(insert), {"m": mood, "s": song_id})
+            i += 1
+        used_pairs.append((mood, song_id))
+
+#populate playlists
+print("Populating playlists...")
+with engine.begin() as conn:
+    num_playlists = 9580
+    existing_titles = []
+    for i in range(num_playlists):
+        creator = conn.execute(sqlalchemy.text(f"SELECT id FROM users WHERE user_type != '{user_role.artist.value}' ORDER BY RANDOM() LIMIT 1")).scalar()
+        title = np.random.choice(fake_playlist_titles)
+        if title in existing_titles:
+            title = title + str(i)
+        existing_titles.append(title)
+        mood = np.random.choice(moods)
+        insert = """INSERT INTO playlists (creator_id, title, mood) VALUES (:cid, :t, :m)"""
+        conn.execute(sqlalchemy.text(insert), {"cid": creator, "t": title, "m": mood})
+
+#populate playlist_songs
+print("Populating playlist_songs...")
+with engine.begin() as conn:
+    num_rows = 958024
+    for i in range(num_rows):
+        pid = conn.execute(sqlalchemy.text(f"SELECT id FROM playlists ORDER BY RANDOM() LIMIT 1")).scalar()
+        sid = conn.execute(sqlalchemy.text(f"SELECT id FROM songs ORDER BY RANDOM() LIMIT 1")).scalar()
+        insert = """INSERT INTO playlist_songs (playlist_id, song_id) VALUES (:p, :s)"""
+        conn.execute(sqlalchemy.text(insert), {"p": pid, "s": sid})
+
+#populate user_preferences
+print("Populating user_preferences...")
+pref_types = [pt.value for pt in PreferenceType]
+with engine.begin() as conn:
+    num_rows = 4124
+    for i in range(num_rows):
+        user_id = conn.execute(sqlalchemy.text(f"SELECT id FROM users WHERE user_type != '{user_role.artist.value}' ORDER BY RANDOM() LIMIT 1")).scalar()
+        pref_type = np.random.choice(pref_types)
+        if pref_type == 'genre':
+            pref = np.random.choice(genre_list)
+        else:
+            pref = np.random.choice(moods)
+        insert = """INSERT INTO user_preferences (user_id, preference, preference_type) VALUES (:uid, :p, :pt)"""
+        conn.execute(sqlalchemy.text(insert), {"uid": user_id, "p": pref, "pt": pref_type})

@@ -50,6 +50,10 @@ class NewSong(BaseModel):
     duration: int
     release_date: date
 
+class ContentType(str, Enum):
+    album = "album",
+    song = "song"
+
 #returns list of all songs. Pagination works given lower bound and upper bound of songs which are sorted in order of title
 @router.get("/")
 def get_all_songs(lower_bound: int, upper_bound: int):

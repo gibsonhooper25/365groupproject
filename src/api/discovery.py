@@ -18,6 +18,9 @@ class Preference(BaseModel):
     update_type: str
     update:str
 
+class PreferenceType(str, Enum):
+    genre = "genre"
+    mood = "mood"
    
 #only called if their preferences have not been set yet
 #will see what they have in their playlists and fill out preference table for
