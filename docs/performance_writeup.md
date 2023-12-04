@@ -34,57 +34,171 @@ For a total of 1 million rows.
 
 # Performance Results of Hitting Endpoints
 ## Songs
-- Get all songs - `/songs/` - {time to execute in ms}
-- Get song - `/songs/{song_id}`- {time to execute in ms}
-- Create new song - `/songs/new` - {time to execute in ms}
-- Add mood to song - `/songs/new/{song_id}/moods` - {time to execute in ms}
-- Rate song - `/songs/{song_id}/rate` - {time to execute in ms}
-- Get reviews for song - `/songs/{song_id}/reviews` - {time to execute in ms}
+- Get all songs - `/songs/` - 79 ms
+- Get song - `/songs/{song_id}`- 12 ms
+- Create new song - `/songs/new` - 19 ms
+- Add mood to song - `/songs/new/{song_id}/moods` - 82 ms
+- Rate song - `/songs/{song_id}/rate` - 9 ms
+- Get reviews for song - `/songs/{song_id}/reviews` - 14 ms
 ## Albums
-- create new album - `/albums/new` - {time to execute in ms}
-- add song to album - `/albums/{album_id}/add-song/{song_id}` - {time to execute in ms}
-- remove song from album - `/albums/{album_id}/songs/{song_id}` - {time to execute in ms}
-- get songs from album - `/albums/{album_id}` - {time to execute in ms}
-- rate album - `/albums/{album_id}/rate` - {time to execute in ms}
-- get reviews by album - `/albums/{album_id}/reviews` - {time to execute in ms}
+- create new album - `/albums/new` - 78 ms
+- add song to album - `/albums/{album_id}/add-song/{song_id}` - 22 ms
+- remove song from album - `/albums/{album_id}/songs/{song_id}` - 9 ms
+- get songs from album - `/albums/{album_id}` - 11 ms
+- rate album - `/albums/{album_id}/rate` - 13 ms
+- get reviews by album - `/albums/{album_id}/reviews` - 14 ms
 ## Playlists
-- create curated playlist - `/playlists/new/curated` - {time to execute in ms}
-- create curated playlist advanced - `/playlists/new/advanced` - {time to execute in ms}
-- create personal playlist - `/playlists/new/personal` - {time to execute in ms}
-- add song to playlist - `/playlists/{playlist_id}/add-song/{song_id}` - {time to execute in ms}
-- add album songs to playlist - `/playlists/{playlist_id}/add-songs/{album_id}` - {time to execute in ms}
-- delete song from playlist - `/playlists/{playlist_id}/remove-song/{song_id}` - {time to execute in ms}
-- get playlist - `/playlists/{playlist_id}` - {time to execute in ms}
+- create curated playlist - `/playlists/new/curated` - 82 ms
+- create curated playlist advanced - `/playlists/new/advanced` - 59 ms
+- create personal playlist - `/playlists/new/personal` - 61 ms
+- add song to playlist - `/playlists/{playlist_id}/add-song/{song_id}` - 6 ms
+- add album songs to playlist - `/playlists/{playlist_id}/add-songs/{album_id}` - 155 ms
+- delete song from playlist - `/playlists/{playlist_id}/remove-song/{song_id}` - 66 ms
+- get playlist - `/playlists/{playlist_id}` - 40 ms
 
 ## Users
-- add user - `/users/` - {time to execute in ms}
-- login - `/users/login` - {time to execute in ms}
+- add user - `/users/` - 68 ms
+- login - `/users/login` - 10 ms
 
 ## Discovery
-- preference defaults - `/discovery/{user_id}` - {time to execute in ms}
-- get preferences - `/discovery/preferences/{user_id}` - {time to execute in ms}
-- add preference - `/discovery/preferences/{user_id}` - {time to execute in ms}
-- delete preferences - `/discovery/preferences/{user_id}` - {time to execute in ms}
-- get new releases - `/discovery/new_releases/{user_id}` - {time to execute in ms}
-- add artist to spotlight - `/discovery/spotlight/add` - {time to execute in ms}
-- remove artist from spotlight - `/discovery/spotlight` - {time to execute in ms}
-- get spotlight list - `/discovery/spotlight/{user_id}` - {time to execute in ms}
+- preference defaults - `/discovery/{user_id}` - 96 ms
+- get preferences - `/discovery/preferences/{user_id}` - 18 ms
+- add preference - `/discovery/preferences/{user_id}` - 14 ms
+- delete preferences - `/discovery/preferences/{user_id}` - 5 ms
+- get new releases - `/discovery/new_releases/{user_id}` - 5236 ms
+- add artist to spotlight - `/discovery/spotlight/add` - 12 ms
+- remove artist from spotlight - `/discovery/spotlight` - 8 ms
+- get spotlight list - `/discovery/spotlight/{user_id}` - 406 ms
 
 ## Three Slowest Endpoints
-- a
-- b
-- c
+- get new releases
+- get spotlight list
+- add album to playlist
 
 # Performance Tuning
 
-- [endpoint 1]
-  - [results of explain]
-  - [what index to add]
-  - [command for adding index]
-  - [results of new explain]
-  - [did it improve enough]
+- get new releases
+  - In get new releases, there are multiple queries, but this is explain analyze on the one that takes the longest to run.
+```
+  | QUERY PLAN                                                                                                                                                                                                   |
+|
+| Limit  (cost=26930.04..26930.05 rows=1 width=50) (actual time=19833.238..19833.383 rows=0 loops=1)                                                                                                             |
+|   ->  Sort  (cost=26930.04..26930.05 rows=1 width=50) (actual time=19833.237..19833.382 rows=0 loops=1)                                                                                                        |
+|         Sort Key: songs.created_at DESC                                                                                                                                                                        |
+|         Sort Method: quicksort  Memory: 25kB                                                                                                                                                                   |
+|         ->  Nested Loop  (cost=26727.40..26930.03 rows=1 width=50) (actual time=19833.223..19833.368 rows=0 loops=1)                                                                                           |
+|               Join Filter: (users.id = songs.artist_id)                                                                                                                                                        |
+|               ->  Hash Anti Join  (cost=13401.45..13408.05 rows=1 width=44) (actual time=4.024..4.680 rows=241 loops=1)                                                                                        |
+|                     Hash Cond: (songs.id = playlist_songs.song_id)                                                                                                                                             |
+|                     ->  Seq Scan on songs  (cost=0.00..5.40 rows=240 width=52) (actual time=0.003..0.203 rows=241 loops=1)                                                                                     |
+|                     ->  Hash  (cost=13390.20..13390.20 rows=900 width=8) (actual time=4.006..4.117 rows=0 loops=1)                                                                                             |
+|                           Buckets: 1024  Batches: 1  Memory Usage: 8kB                                                                                                                                         |
+|                           ->  Gather  (cost=1214.92..13390.20 rows=900 width=8) (actual time=4.006..4.116 rows=0 loops=1)                                                                                      |
+|                                 Workers Planned: 2                                                                                                                                                             |
+|                                 Workers Launched: 2                                                                                                                                                            |
+|                                 ->  Hash Join  (cost=214.93..12300.20 rows=375 width=8) (actual time=0.485..0.486 rows=0 loops=3)                                                                              |
+|                                       Hash Cond: (playlist_songs.playlist_id = playlists.id)                                                                                                                   |
+|                                       ->  Parallel Seq Scan on playlist_songs  (cost=0.00..11036.93 rows=399193 width=16) (actual time=0.011..0.012 rows=1 loops=3)                                            |
+|                                       ->  Hash  (cost=214.81..214.81 rows=9 width=8) (actual time=0.432..0.432 rows=0 loops=3)                                                                                 |
+|                                             Buckets: 1024  Batches: 1  Memory Usage: 8kB                                                                                                                       |
+|                                             ->  Seq Scan on playlists  (cost=0.00..214.81 rows=9 width=8) (actual time=0.432..0.432 rows=0 loops=3)                                                            |
+|                                                   Filter: (creator_id = 2)                                                                                                                                     |
+|                                                   Rows Removed by Filter: 9585                                                                                                                                 |
+|               ->  Merge Join  (cost=13325.94..13521.21 rows=62 width=30) (actual time=82.269..82.269 rows=0 loops=241)                                                                                         |
+|                     Merge Cond: (users.id = songs_1.artist_id)                                                                                                                                                 |
+|                     ->  Index Scan using users_pkey1 on users  (cost=0.28..78.92 rows=1376 width=22) (actual time=0.007..0.007 rows=1 loops=241)                                                               |
+|                     ->  Unique  (cost=13325.67..13437.45 rows=62 width=8) (actual time=82.261..82.261 rows=0 loops=241)                                                                                        |
+|                           ->  GroupAggregate  (cost=13325.67..13437.30 rows=62 width=8) (actual time=82.260..82.260 rows=0 loops=241)                                                                          |
+|                                 Group Key: songs_1.artist_id                                                                                                                                                   |
+|                                 Filter: (count(DISTINCT playlist_songs_1.song_id) > 3)                                                                                                                         |
+|                                 ->  Gather Merge  (cost=13325.67..13430.49 rows=900 width=16) (actual time=82.259..82.259 rows=0 loops=241)                                                                    |
+|                                       Workers Planned: 2                                                                                                                                                       |
+|                                       Workers Launched: 2                                                                                                                                                      |
+|                                       ->  Sort  (cost=12325.64..12326.58 rows=375 width=16) (actual time=27.782..27.783 rows=0 loops=723)                                                                      |
+|                                             Sort Key: songs_1.artist_id                                                                                                                                        |
+|                                             Sort Method: quicksort  Memory: 25kB                                                                                                                               |
+|                                             Worker 0:  Sort Method: quicksort  Memory: 25kB                                                                                                                    |
+|                                             Worker 1:  Sort Method: quicksort  Memory: 25kB                                                                                                                    |
+|                                             ->  Hash Join  (cost=223.33..12309.61 rows=375 width=16) (actual time=27.754..27.754 rows=0 loops=723)                                                             |
+|                                                   Hash Cond: (playlist_songs_1.song_id = songs_1.id)                                                                                                           |
+|                                                   ->  Hash Join  (cost=214.93..12300.20 rows=375 width=8) (actual time=27.694..27.695 rows=0 loops=723)                                                        |
+|                                                         Hash Cond: (playlist_songs_1.playlist_id = playlists_1.id)                                                                                             |
+|                                                         ->  Parallel Seq Scan on playlist_songs playlist_songs_1  (cost=0.00..11036.93 rows=399193 width=16) (actual time=0.008..12.205 rows=317669 loops=723) |
+|                                                         ->  Hash  (cost=214.81..214.81 rows=9 width=8) (actual time=0.420..0.420 rows=0 loops=483)                                                             |
+|                                                               Buckets: 1024  Batches: 1  Memory Usage: 8kB                                                                                                     |
+|                                                               ->  Seq Scan on playlists playlists_1  (cost=0.00..214.81 rows=9 width=8) (actual time=0.420..0.420 rows=0 loops=483)                            |
+|                                                                     Filter: (creator_id = 2)                                                                                                                   |
+|                                                                     Rows Removed by Filter: 9585                                                                                                               |
+|                                                   ->  Hash  (cost=5.40..5.40 rows=240 width=16) (actual time=0.054..0.054 rows=241 loops=483)                                                                  |
+|                                                         Buckets: 1024  Batches: 1  Memory Usage: 20kB                                                                                                          |
+|                                                         ->  Seq Scan on songs songs_1  (cost=0.00..5.40 rows=240 width=16) (actual time=0.012..0.033 rows=241 loops=483)                                       |
+|                                                               Filter: (artist_id IS NOT NULL)                                                                                                                  |
+| Planning Time: 0.965 ms                                                                                                                                                                                        |
+| Execution Time: 19833.655 ms                                                                                                                                                                                   |
+```
 
-- [endpoint 2]
+  - Index on playlists creator_id, this will hep find all the playlists by a specific creator faster. Also an index on playlist_songs song_id, this should just make the join faster when joining playlist_songs and songs. This should solve the main time lag which comes from joining playlist_songs and songs.
+  - `CREATE INDEX idx_playlists_creator_id ON playlists(creator_id)` and `CREATE INDEX idx_playlist_songs_song_id ON playlist_songs(song_id)`
+  - 
+```
+| QUERY PLAN                                                                                                                                                                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Limit  (cost=20491.39..20491.40 rows=1 width=50) (actual time=7.678..10.639 rows=0 loops=1)                                                                                                                  |
+|   ->  Sort  (cost=20491.39..20491.40 rows=1 width=50) (actual time=7.676..10.637 rows=0 loops=1)                                                                                                             |
+|         Sort Key: songs.created_at DESC                                                                                                                                                                      |
+|         Sort Method: quicksort  Memory: 25kB                                                                                                                                                                 |
+|         ->  Nested Loop  (cost=13190.59..20491.38 rows=1 width=50) (actual time=7.665..10.626 rows=0 loops=1)                                                                                                |
+|               Join Filter: (songs.artist_id = users.id)                                                                                                                                                      |
+|               ->  Nested Loop Anti Join  (cost=13190.59..20429.42 rows=1 width=52) (actual time=7.665..10.625 rows=0 loops=1)                                                                                |
+|                     ->  Merge Join  (cost=13157.90..13272.46 rows=80 width=60) (actual time=7.664..10.623 rows=0 loops=1)                                                                                    |
+|                           Merge Cond: (songs.artist_id = songs_1.artist_id)                                                                                                                                  |
+|                           ->  Sort  (cost=14.89..15.49 rows=240 width=52) (actual time=0.088..0.088 rows=1 loops=1)                                                                                          |
+|                                 Sort Key: songs.artist_id                                                                                                                                                    |
+|                                 Sort Method: quicksort  Memory: 47kB                                                                                                                                         |
+|                                 ->  Seq Scan on songs  (cost=0.00..5.40 rows=240 width=52) (actual time=0.004..0.029 rows=241 loops=1)                                                                       |
+|                           ->  Unique  (cost=13143.01..13254.80 rows=62 width=8) (actual time=7.574..10.532 rows=0 loops=1)                                                                                   |
+|                                 ->  GroupAggregate  (cost=13143.01..13254.64 rows=62 width=8) (actual time=7.573..10.531 rows=0 loops=1)                                                                     |
+|                                       Group Key: songs_1.artist_id                                                                                                                                           |
+|                                       Filter: (count(DISTINCT playlist_songs_1.song_id) > 3)                                                                                                                 |
+|                                       ->  Gather Merge  (cost=13143.01..13247.83 rows=900 width=16) (actual time=7.572..10.529 rows=0 loops=1)                                                               |
+|                                             Workers Planned: 2                                                                                                                                               |
+|                                             Workers Launched: 2                                                                                                                                              |
+|                                             ->  Sort  (cost=12142.99..12143.92 rows=375 width=16) (actual time=0.250..0.254 rows=0 loops=3)                                                                  |
+|                                                   Sort Key: songs_1.artist_id                                                                                                                                |
+|                                                   Sort Method: quicksort  Memory: 25kB                                                                                                                       |
+|                                                   Worker 0:  Sort Method: quicksort  Memory: 25kB                                                                                                            |
+|                                                   Worker 1:  Sort Method: quicksort  Memory: 25kB                                                                                                            |
+|                                                   ->  Hash Join  (cost=40.67..12126.95 rows=375 width=16) (actual time=0.225..0.229 rows=0 loops=3)                                                          |
+|                                                         Hash Cond: (playlist_songs_1.song_id = songs_1.id)                                                                                                   |
+|                                                         ->  Hash Join  (cost=32.27..12117.55 rows=375 width=8) (actual time=0.071..0.074 rows=0 loops=3)                                                     |
+|                                                               Hash Cond: (playlist_songs_1.playlist_id = playlists_1.id)                                                                                     |
+|                                                               ->  Parallel Seq Scan on playlist_songs playlist_songs_1  (cost=0.00..11036.93 rows=399193 width=16) (actual time=0.017..0.017 rows=1 loops=3) |
+|                                                               ->  Hash  (cost=32.16..32.16 rows=9 width=8) (actual time=0.043..0.043 rows=0 loops=3)                                                         |
+|                                                                     Buckets: 1024  Batches: 1  Memory Usage: 8kB                                                                                             |
+|                                                                     ->  Bitmap Heap Scan on playlists playlists_1  (cost=4.35..32.16 rows=9 width=8) (actual time=0.043..0.043 rows=0 loops=3)               |
+|                                                                           Recheck Cond: (creator_id = 2)                                                                                                     |
+|                                                                           ->  Bitmap Index Scan on idx_playlists_creator_id  (cost=0.00..4.35 rows=9 width=0) (actual time=0.041..0.042 rows=0 loops=3)      |
+|                                                                                 Index Cond: (creator_id = 2)                                                                                                 |
+|                                                         ->  Hash  (cost=5.40..5.40 rows=240 width=16) (actual time=0.091..0.091 rows=241 loops=3)                                                            |
+|                                                               Buckets: 1024  Batches: 1  Memory Usage: 20kB                                                                                                  |
+|                                                               ->  Seq Scan on songs songs_1  (cost=0.00..5.40 rows=240 width=16) (actual time=0.015..0.053 rows=241 loops=3)                                 |
+|                                                                     Filter: (artist_id IS NOT NULL)                                                                                                          |
+|                     ->  Hash Join  (cost=32.69..240.58 rows=4 width=8) (never executed)                                                                                                                      |
+|                           Hash Cond: (playlist_songs.playlist_id = playlists.id)                                                                                                                             |
+|                           ->  Index Scan using idx_playlist_songs_song_id on playlist_songs  (cost=0.42..197.83 rows=3992 width=16) (never executed)                                                         |
+|                                 Index Cond: (song_id = songs.id)                                                                                                                                             |
+|                           ->  Hash  (cost=32.16..32.16 rows=9 width=8) (never executed)                                                                                                                      |
+|                                 ->  Bitmap Heap Scan on playlists  (cost=4.35..32.16 rows=9 width=8) (never executed)                                                                                        |
+|                                       Recheck Cond: (creator_id = 2)                                                                                                                                         |
+|                                       ->  Bitmap Index Scan on idx_playlists_creator_id  (cost=0.00..4.35 rows=9 width=0) (never executed)                                                                   |
+|                                             Index Cond: (creator_id = 2)                                                                                                                                     |
+|               ->  Seq Scan on users  (cost=0.00..44.76 rows=1376 width=22) (never executed)                                                                                                                  |
+| Planning Time: 1.367 ms                                                                                                                                                                                      |
+| Execution Time: 10.842 ms                                                                                                                                                                                    |
+```
+  - These two indexes cut the run time to the point where the main query runs in 11 ms, which is on par with the other endpoints.
+
+- get spotlight list
   - [results of explain]
   - [what index to add]
   - [command for adding index]
