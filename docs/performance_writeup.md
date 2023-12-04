@@ -33,6 +33,67 @@ Multiplying the above multiplier by each of the row values gives the final row c
 For a total of 1 million rows.
 
 # Performance Results of Hitting Endpoints
+## Songs
+- Get all songs - `/songs/` - {time to execute in ms}
+- Get song - `/songs/{song_id}`- {time to execute in ms}
+- Create new song - `/songs/new` - {time to execute in ms}
+- Add mood to song - `/songs/new/{song_id}/moods` - {time to execute in ms}
+- Rate song - `/songs/{song_id}/rate` - {time to execute in ms}
+- Get reviews for song - `/songs/{song_id}/reviews` - {time to execute in ms}
+## Albums
+- create new album - `/albums/new` - {time to execute in ms}
+- add song to album - `/albums/{album_id}/add-song/{song_id}` - {time to execute in ms}
+- remove song from album - `/albums/{album_id}/songs/{song_id}` - {time to execute in ms}
+- get songs from album - `/albums/{album_id}` - {time to execute in ms}
+- rate album - `/albums/{album_id}/rate` - {time to execute in ms}
+- get reviews by album - `/albums/{album_id}/reviews` - {time to execute in ms}
+## Playlists
+- create curated playlist - `/playlists/new/curated` - {time to execute in ms}
+- create curated playlist advanced - `/playlists/new/advanced` - {time to execute in ms}
+- create personal playlist - `/playlists/new/personal` - {time to execute in ms}
+- add song to playlist - `/playlists/{playlist_id}/add-song/{song_id}` - {time to execute in ms}
+- add album songs to playlist - `/playlists/{playlist_id}/add-songs/{album_id}` - {time to execute in ms}
+- delete song from playlist - `/playlists/{playlist_id}/remove-song/{song_id}` - {time to execute in ms}
+- get playlist - `/playlists/{playlist_id}` - {time to execute in ms}
 
+## Users
+- add user - `/users/` - {time to execute in ms}
+- login - `/users/login` - {time to execute in ms}
+
+## Discovery
+- preference defaults - `/discovery/{user_id}` - {time to execute in ms}
+- get preferences - `/discovery/preferences/{user_id}` - {time to execute in ms}
+- add preference - `/discovery/preferences/{user_id}` - {time to execute in ms}
+- delete preferences - `/discovery/preferences/{user_id}` - {time to execute in ms}
+- get new releases - `/discovery/new_releases/{user_id}` - {time to execute in ms}
+- add artist to spotlight - `/discovery/spotlight/add` - {time to execute in ms}
+- remove artist from spotlight - `/discovery/spotlight` - {time to execute in ms}
+- get spotlight list - `/discovery/spotlight/{user_id}` - {time to execute in ms}
+
+## Three Slowest Endpoints
+- a
+- b
+- c
 
 # Performance Tuning
+
+- [endpoint 1]
+  - [results of explain]
+  - [what index to add]
+  - [command for adding index]
+  - [results of new explain]
+  - [did it improve enough]
+
+- [endpoint 2]
+  - [results of explain]
+  - [what index to add]
+  - [command for adding index]
+  - [results of new explain]
+  - [did it improve enough]
+
+- [endpoint 3]
+  - [results of explain]
+  - [what index to add]
+  - [command for adding index]
+  - [results of new explain]
+  - [did it improve enough]
