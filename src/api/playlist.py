@@ -170,7 +170,7 @@ def add_album_songs_to_playlist(playlist_id: int, album_id: int):
                 """
                 connection.execute(sqlalchemy.text(sql_to_execute), 
                     [{"playlist_id": playlist_id, "song_id": row.id}])
-            if album_exists:
+            if not album_exists:
                 return "No album exists for the given album ID"
             return "Added album to playlist"
 
