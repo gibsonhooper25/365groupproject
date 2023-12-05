@@ -274,7 +274,8 @@ For a total of 1 million rows.
   - This cut the time down by almost a factor of 10, making it run at a fast enough time to compare to the other endpoints.
 
 - add album to playlist
-  - ```
+  -
+```
   | QUERY PLAN                                                                                                                            |
 | ------------------------------------------------------------------------------------------------------------------------------------- |
 | Insert on playlist_songs  (cost=21415.49..21415.51 rows=0 width=0) (actual time=80.749..80.750 rows=0 loops=1)                        |
@@ -288,11 +289,12 @@ For a total of 1 million rows.
 | Trigger for constraint playlist_songs_playlist_id_fkey: time=0.299 calls=1                                                            |
 | Trigger for constraint playlist_songs_song_id_fkey: time=0.110 calls=1                                                                |
 | Execution Time: 81.218 ms                                                                                                             |
-  ```
+```
   - This endpoint first uses a simple select from albums with a join on songs to get all songs from a given album. This part has minimal impact because it only uses primary keys for joining and filtering. 
   - After getting the songs for an album an insert query is run for each of those songs, adding them if the song does not already exist in the playlist. This query can be repeated as many times as there are songs in a given album and slow down the endpoint. To speed this end we should add an index playlist_songs song_id to speed up the NOT EXISTS part of each of these repeated queries.
   - `CREATE INDEX idx_playlist_songs_song_id ON playlist_songs(song_id)`
-  - ```
+  -
+```
   | QUERY PLAN                                                                                                                                       |
 | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Insert on playlist_songs  (cost=6346.15..6346.16 rows=0 width=0) (actual time=11.972..11.974 rows=0 loops=1)                                     |
@@ -310,5 +312,5 @@ For a total of 1 million rows.
 | Trigger for constraint playlist_songs_playlist_id_fkey: time=0.745 calls=1                                                                       |
 | Trigger for constraint playlist_songs_song_id_fkey: time=0.268 calls=1                                                                           |
 | Execution Time: 13.163 ms                                                                                                                        |
-  ```
+```
   - This index significantly reduced the execution time for this part of the endpoint and matches the indexes added above which works nicely because we didn't need to add too many new indexes.
