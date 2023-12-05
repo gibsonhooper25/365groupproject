@@ -273,9 +273,42 @@ For a total of 1 million rows.
   ```
   - This cut the time down by almost a factor of 10, making it run at a fast enough time to compare to the other endpoints.
 
-- [endpoint 3]
-  - [results of explain]
-  - [what index to add]
-  - [command for adding index]
-  - [results of new explain]
-  - [did it improve enough]
+- add album to playlist
+  - ```
+  | QUERY PLAN                                                                                                                            |
+| ------------------------------------------------------------------------------------------------------------------------------------- |
+| Insert on playlist_songs  (cost=21415.49..21415.51 rows=0 width=0) (actual time=80.749..80.750 rows=0 loops=1)                        |
+|   InitPlan 1 (returns $0)                                                                                                             |
+|     ->  Seq Scan on playlist_songs playlist_songs_1  (cost=0.00..21415.49 rows=1 width=0) (actual time=80.579..80.579 rows=0 loops=1) |
+|           Filter: ((playlist_id = 423) AND (song_id = 30))                                                                            |
+|           Rows Removed by Filter: 958033                                                                                              |
+|   ->  Result  (cost=0.00..0.01 rows=1 width=32) (actual time=80.681..80.681 rows=1 loops=1)                                           |
+|         One-Time Filter: (NOT $0)                                                                                                     |
+| Planning Time: 0.465 ms                                                                                                               |
+| Trigger for constraint playlist_songs_playlist_id_fkey: time=0.299 calls=1                                                            |
+| Trigger for constraint playlist_songs_song_id_fkey: time=0.110 calls=1                                                                |
+| Execution Time: 81.218 ms                                                                                                             |
+  ```
+  - This endpoint first uses a simple select from albums with a join on songs to get all songs from a given album. This part has minimal impact because it only uses primary keys for joining and filtering. 
+  - After getting the songs for an album an insert query is run for each of those songs, adding them if the song does not already exist in the playlist. This query can be repeated as many times as there are songs in a given album and slow down the endpoint. To speed this end we should add an index playlist_songs song_id to speed up the NOT EXISTS part of each of these repeated queries.
+  - `CREATE INDEX idx_playlist_songs_song_id ON playlist_songs(song_id)`
+  - ```
+  | QUERY PLAN                                                                                                                                       |
+| ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Insert on playlist_songs  (cost=6346.15..6346.16 rows=0 width=0) (actual time=11.972..11.974 rows=0 loops=1)                                     |
+|   InitPlan 1 (returns $0)                                                                                                                        |
+|     ->  Bitmap Heap Scan on playlist_songs playlist_songs_1  (cost=46.34..6346.15 rows=1 width=0) (actual time=11.690..11.691 rows=0 loops=1)    |
+|           Recheck Cond: (song_id = 31)                                                                                                           |
+|           Filter: (playlist_id = 423)                                                                                                            |
+|           Rows Removed by Filter: 4032                                                                                                           |
+|           Heap Blocks: exact=3119                                                                                                                |
+|           ->  Bitmap Index Scan on idx_playlist_songs_song_id  (cost=0.00..46.33 rows=3988 width=0) (actual time=0.809..0.809 rows=4032 loops=1) |
+|                 Index Cond: (song_id = 31)                                                                                                       |
+|   ->  Result  (cost=0.00..0.01 rows=1 width=32) (actual time=11.812..11.813 rows=1 loops=1)                                                      |
+|         One-Time Filter: (NOT $0)                                                                                                                |
+| Planning Time: 0.795 ms                                                                                                                          |
+| Trigger for constraint playlist_songs_playlist_id_fkey: time=0.745 calls=1                                                                       |
+| Trigger for constraint playlist_songs_song_id_fkey: time=0.268 calls=1                                                                           |
+| Execution Time: 13.163 ms                                                                                                                        |
+  ```
+  - This index significantly reduced the execution time for this part of the endpoint and matches the indexes added above which works nicely because we didn't need to add too many new indexes.
