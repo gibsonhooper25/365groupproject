@@ -71,6 +71,7 @@ def get_all_songs(lower_bound: int, upper_bound: int):
             result = connection.execute(sqlalchemy.text(sql))
             for row in result:
                 return_list.append({
+                    "song_id": row.id,
                     "title": row.title,
                     "artist": row.name,
                     "album": row.album,
