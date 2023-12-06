@@ -17,6 +17,15 @@ class user_role(str, Enum):
     listener = "listener"
     listener_and_artist = "listener_and_artist"
 
+#helper function to determine if an artist with given artist_id exists and is actually an artist
+def artist_name(artist_id, connection):
+    exists_criteria = "SELECT name FROM users WHERE id = :given_id AND user_type != 'listener'"
+    artist = connection.execute(sqlalchemy.text(exists_criteria), [{"given_id": artist_id}]).first()
+    if artist:
+        return artist.name
+    else:
+        return False
+
 #adds user to database with given information. Checks to make sure email and username do not already exist (these also have unique constraints in the database)
 # uses password encryption and salt, and returns new user id
 @router.post("/")

@@ -3,6 +3,7 @@ from pydantic import BaseModel, confloat
 from src.api import auth
 import sqlalchemy
 from src import database as db
+from src.api.user import artist_name
 from sqlalchemy.exc import DBAPIError
 from enum import Enum
 from datetime import date
@@ -121,18 +122,21 @@ def create_new_song(artist_id: int, song: NewSong):
     VALUES (:title, :genre, :duration, :artist_id, :release_date) RETURNING id"""
     try:
         with db.engine.begin() as connection:
-            result = connection.execute(sqlalchemy.text(sql_to_execute), 
-                [{"title": song.title, "genre": song.genre, "duration": song.duration,
-                    "artist_id": artist_id, "release_date": song.release_date}])
-            id = result.first().id
+            if artist_name(artist_id, connection):
+                result = connection.execute(sqlalchemy.text(sql_to_execute), 
+                    [{"title": song.title, "genre": song.genre, "duration": song.duration,
+                        "artist_id": artist_id, "release_date": song.release_date}])
+                id = result.first().id
 
-            mood_data = []
-            for mood in song.moods:
-                mood_data.append({"mood": mood.value, "song": id})
-            sql_to_execute = """
-                INSERT INTO mood_songs (mood, song)
-                VALUES (:mood, :song)"""
-            connection.execute(sqlalchemy.text(sql_to_execute), mood_data)
+                mood_data = []
+                for mood in song.moods:
+                    mood_data.append({"mood": mood.value, "song": id})
+                sql_to_execute = """
+                    INSERT INTO mood_songs (mood, song)
+                    VALUES (:mood, :song)"""
+                connection.execute(sqlalchemy.text(sql_to_execute), mood_data)
+            else:
+                return "Given id does not correspond to any artist"
 
     except DBAPIError as error:
         return f"Error returned: <<<{error}>>>"

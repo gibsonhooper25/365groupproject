@@ -6,6 +6,7 @@ from sqlalchemy import *
 from sqlalchemy.exc import DBAPIError
 from src import database as db
 from src.api.song import Genre, Feedback, song_title
+from src.api.user import artist_name
 from datetime import date
 
 router = APIRouter(
@@ -38,13 +39,6 @@ def create_album(new_album: NewAlbum):
     except DBAPIError as error:
         print(f"Error returned: <<<{error}>>>")
 
-def artist_name(artist_id, connection):
-    exists_criteria = "SELECT name FROM users WHERE id = :given_id AND user_type != 'listener'"
-    artist = connection.execute(sqlalchemy.text(exists_criteria), [{"given_id": artist_id}]).first()
-    if artist:
-        return artist.name
-    else:
-        return False
 #returns album title of a given album id, used to verify that album exists
 def album_title(album_id, connection):
     sql_to_execute = """SELECT title from albums WHERE id = :album_id"""
