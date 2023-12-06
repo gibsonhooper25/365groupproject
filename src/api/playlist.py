@@ -205,6 +205,11 @@ def get_playlist(playlist_id: int):
     """
     try:
         with db.engine.begin() as connection:
+            playlist_exists = connection.execute(sqlalchemy.text("""
+                SELECT title FROM playlists WHERE id = :playlist_id
+            """), [{"playlist_id": playlist_id}])
+            if playlist_exists.rowcount == 0:
+                return "No playlist exists for the given playlist ID"
             playlist = connection.execute(sqlalchemy.text(sql_to_execute), [{"playlist_id": playlist_id}])
             song_list = []
             for song in playlist:
@@ -214,7 +219,7 @@ def get_playlist(playlist_id: int):
                     "duration_seconds": song.duration
                 })
             if not song_list:
-                return "No playlist exists for the given playlist ID"
+                return "No songs in playlist"
             return song_list
     except DBAPIError as error:
         print(f"Error returned: <<<{error}>>>")

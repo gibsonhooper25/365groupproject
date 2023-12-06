@@ -32,6 +32,14 @@ def preference_defaults(user_id: int):
             #check to see if user already has preferences set
             result = connection.execute(sqlalchemy.text(
                 """
+                SELECT id FROM users
+                WHERE id = :user_id
+                """
+            ), [{"user_id": user_id}])
+            if result.rowcount == 0:
+                return "Given user id does not exist."
+            result = connection.execute(sqlalchemy.text(
+                """
                 SELECT id FROM user_preferences
                 WHERE user_id = :user_id
                 """
@@ -99,6 +107,14 @@ def quick_insert(update: Preference, connection):
 def get_preferences(user_id: int):
     try:
         with db.engine.begin() as connection:
+            result = connection.execute(sqlalchemy.text(
+                """
+                SELECT id FROM users
+                WHERE id = :user_id
+                """
+            ), [{"user_id": user_id}])
+            if result.rowcount == 0:
+                return "Given user id does not exist."
             result = connection.execute(sqlalchemy.text(
                 """
                 SELECT preference_type, preference FROM user_preferences
@@ -192,6 +208,15 @@ def delete_preference(deletion: Preference):
 def get_new_releases(user_id: int):
     try:
         with db.engine.begin() as connection:
+            result = connection.execute(sqlalchemy.text(
+                """
+                SELECT id FROM users
+                WHERE id = :user_id
+                """
+            ), [{"user_id": user_id}])
+            if result.rowcount == 0:
+                return "Given user id does not exist."
+            
             preferences = connection.execute(sqlalchemy.text(
                 """
                 SELECT preference_type, preference FROM user_preferences
@@ -202,7 +227,10 @@ def get_new_releases(user_id: int):
             #if user does not have any registered preferences, they are added
             #automatically
             if preferences.rowcount == 0:
-                preference_defaults(user_id)
+                result = preference_defaults(user_id)
+                if result != "Preferences successfully set.":
+                    return result
+
 
             #get new songs whose mood and genre matches user preferences
             genres = []
@@ -221,7 +249,6 @@ def get_new_releases(user_id: int):
             if len(moods) == 0:
                 [moods.append(mood) for mood in Mood]
 
-        
             #finds songs that match users preferred genres and moods
             #ignores songs that are already in users playlists
             #then orders it by how recently it was released,
@@ -354,6 +381,14 @@ def add_artist_to_spotlight(user_id: int, description: str):
 def remove_artist_from_spotlight(user_id: int):
     try:
         with db.engine.begin() as connection:
+            result = connection.execute(sqlalchemy.text(
+                """
+                SELECT id FROM users
+                WHERE id = :user_id AND spotlight = TRUE
+                """
+            ), [{"user_id": user_id}])
+            if result.rowcount == 0:
+                return "No spotlighted artist for the given id."
             connection.execute(sqlalchemy.text(
                 """
                 UPDATE users
@@ -366,12 +401,21 @@ def remove_artist_from_spotlight(user_id: int):
     except DBAPIError as error:
         return f"Error returned: <<<{error}>>>"
     
-#returns a list of spotlighted artists that match the users preferred genre 
+#returns a list of songs from spotlighted artists that match the users preferred genre 
 #preferences
+#if no preferences are set, it returns any songs from spotlighted artists
 @router.get("/spotlight/{user_id}")
 def get_spotlight_list(user_id: int):
     try:
         with db.engine.begin() as connection:
+            result = connection.execute(sqlalchemy.text(
+                """
+                SELECT id FROM users
+                WHERE id = :user_id
+                """
+            ), [{"user_id": user_id}])
+            if result.rowcount == 0:
+                return "Given user id does not exist."
             result = connection.execute(sqlalchemy.text(
                 """
                 SELECT preference FROM user_preferences
